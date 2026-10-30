@@ -127,7 +127,11 @@ class Shares:
         matrix = qr_rows(url)
         with self.lock:
             self.clean()
-            if len(self.links) + len(self.sessions) >= MAX_SHARES:
+            # A replacement revokes this user's links and claimed sessions.
+            # Check its projected size before revoking any working delivery.
+            retained = sum(value['user'] != user for table in (self.links, self.sessions)
+                           for value in table.values())
+            if retained >= MAX_SHARES:
                 raise ValueError('Service busy; try again after 15 minutes')
             self.revoke(user)
             expires = self.clock() + TTL

@@ -1,0 +1,3 @@
+# Test-only server; never copied into ProGo runtime/release.
+# 4.0 supports the Python 3.9+ CI images and the tested ServerInterface contract.
+paramiko==4.0.0

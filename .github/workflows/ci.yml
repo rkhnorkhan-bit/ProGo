@@ -1,6 +1,13 @@
 name: ProGo CI
 
 on:
+  workflow_dispatch:
+    inputs:
+      upload_artifacts:
+        description: 'Explicitly approve uploading CI files (public for a public repository)'
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [ main, develop, "feature/**" ]
   pull_request:
@@ -10,12 +17,30 @@ permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: progo-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   vpn-server-test:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        run: |
+          tested_sha=$(git rev-parse HEAD)
+          test "$tested_sha" = "$GITHUB_SHA"
+          echo "sha=$tested_sha" >> "$GITHUB_OUTPUT"
+      - name: Verify strict aggregate refusals
+        run: python3 -m unittest discover -s tests -p 'test_ci_aggregate.py' -v
+      - name: Verify private operation recovery
+        # The isolated fixture exercises the real root-only owner entry point.
+        # Its server effects are replaced; only temporary receipt files are written.
+        run: sudo python3 -m unittest discover -s tests -p 'test_home_vpn_operations.py' -v
       - name: Decode QR independently and verify share endpoints
         run: |
           python3 -m venv /tmp/progo-qr-test
@@ -24,21 +49,22 @@ jobs:
       - name: Provision isolated VPN and test invitation restrictions
         run: sudo --preserve-env=GITHUB_ACTIONS python3 tests/home_vpn_provision_smoke.py
 
-  windows-build:
+  windows-relay-tests:
     runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Repository hygiene and build
+      - name: Record exact tested commit
+        id: identity
         shell: powershell
         run: |
-          try {
-            .\scripts\Test-ProGo.ps1 *>&1 | Tee-Object -FilePath ci-output.txt
-          } catch {
-            $_ | Out-String | Tee-Object -FilePath ci-output.txt -Append
-            throw
-          }
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Set up Python for relay tests
         uses: actions/setup-python@v5
@@ -50,14 +76,83 @@ jobs:
         run: |
           .\scripts\Test-HomeVpnRelay.ps1
 
+  windows-build:
+    needs: [vpn-server-test, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests, windows-relay-tests]
+    env:
+      PROGO_EXPECTED_SHA: ${{ github.sha }}
+      PROGO_NEEDS_JSON: ${{ toJSON(needs) }}
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Require successful prerequisites on exact tested commit
+        shell: powershell
+        run: |
+          python .\scripts\check_ci_aggregate.py --prerequisites
+          if ($LASTEXITCODE -ne 0) { throw 'Build prerequisites did not pass on the exact tested SHA.' }
+
+      - name: Repository hygiene and Core build/tests
+        shell: powershell
+        run: |
+          try {
+            .\scripts\Test-ProGo.ps1 -Suite Core *>&1 | Tee-Object -FilePath ci-output.txt
+          } catch {
+            $_ | Out-String | Tee-Object -FilePath ci-output.txt -Append
+            throw
+          }
+
+      - name: Verify clean checkout build identity
+        if: ${{ success() }}
+        shell: powershell
+        run: |
+          $version = (Get-Content -LiteralPath .\VERSION -Raw).Trim()
+          $checkout = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $checkout -cne $env:GITHUB_SHA) { throw 'Clean build checkout identity mismatch.' }
+          $dirty = @(git status --porcelain --untracked-files=no)
+          if ($LASTEXITCODE -ne 0 -or $dirty.Count -ne 0) { throw 'Build checkout is not clean.' }
+          $exe = [Reflection.Assembly]::Load([IO.File]::ReadAllBytes((Join-Path $PWD 'release\ProGo.exe')))
+          $identity = @($exe.GetCustomAttributes([Reflection.AssemblyInformationalVersionAttribute], $false))[0].InformationalVersion
+          if ($identity -cne ($version + '+' + $checkout)) { throw 'Actual build informational identity mismatch.' }
+
+      - name: Verify icon fixture on Windows PowerShell 5.1
+        if: ${{ !cancelled() }}
+        shell: powershell
+        run: |
+          $desktop = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+          if (-not (Test-Path -LiteralPath $desktop -PathType Leaf)) { throw 'Windows PowerShell 5.1 missing.' }
+          & $desktop -NoProfile -File .\tests\BuildIconCompatibilityTests.ps1 -ExpectedHost Desktop51
+          if ($LASTEXITCODE -ne 0) { throw 'Windows PowerShell icon fixture failed.' }
+
+      - name: Verify icon fixture on PowerShell 7
+        if: ${{ !cancelled() }}
+        shell: powershell
+        run: |
+          $core = Get-Command pwsh -ErrorAction Stop
+          & $core.Source -NoProfile -File .\tests\BuildIconCompatibilityTests.ps1 -ExpectedHost Core7
+          if ($LASTEXITCODE -ne 0) { throw 'PowerShell 7 icon fixture failed.' }
+
       - name: Check public sources and release content
         shell: powershell
         run: |
           python .\scripts\check_public_content.py --release .\release
           if ($LASTEXITCODE -ne 0) { throw 'Public content check failed' }
 
+      # Public candidates need a separately approved delivery method. Build,
+      # tests, content checks and packaging still run without uploading files.
       - name: Upload wizard screenshots
-        if: always()
+        if: always() && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-wizard-screenshots
@@ -70,12 +165,16 @@ jobs:
         if: success()
         shell: powershell
         run: |
+          python .\scripts\check_ci_aggregate.py --prerequisites
+          if ($LASTEXITCODE -ne 0) { throw 'Package prerequisites did not pass on the exact tested SHA.' }
           if (Test-Path ProGo-release.zip) { Remove-Item ProGo-release.zip -Force }
           Compress-Archive -Path .\release\* -DestinationPath .\ProGo-release.zip -Force
           Get-Item .\ProGo-release.zip | Format-List FullName,Length
+          $candidateDigest = (Get-FileHash -LiteralPath .\ProGo-release.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host ("Candidate ZIP SHA256: " + $candidateDigest)
 
       - name: Upload diagnostics
-        if: always()
+        if: always() && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-ci-diagnostics
@@ -83,7 +182,7 @@ jobs:
           retention-days: 7
 
       - name: Upload release folder
-        if: success()
+        if: success() && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-release
@@ -91,7 +190,7 @@ jobs:
           retention-days: 3
 
       - name: Upload release package
-        if: success()
+        if: success() && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-release-zip
@@ -132,3 +231,141 @@ jobs:
                 core.info(`Deleted old artifact ${artifact.id} (${name}, ${artifact.created_at})`);
               }
             }
+
+  installer-tests:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Repository hygiene, build and Installer Foundation suites
+        shell: powershell
+        run: |
+          .\scripts\Test-ProGo.ps1 -Suite Installer -InstallerPartition Foundation
+
+  installer-live-tests:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Repository hygiene, build and Installer Live suites
+        shell: powershell
+        run: |
+          .\scripts\Test-ProGo.ps1 -Suite Installer -InstallerPartition Live
+
+  installer-recovery-tests:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Repository hygiene, build and Installer Recovery suites
+        shell: powershell
+        run: |
+          .\scripts\Test-ProGo.ps1 -Suite Installer -InstallerPartition Recovery
+
+  installer-recovery-input-tests:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Repository hygiene, build and Installer RecoveryInput suites
+        shell: powershell
+        run: |
+          .\scripts\Test-ProGo.ps1 -Suite Installer -InstallerPartition RecoveryInput
+
+  installer-runtime-tests:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Build isolated runtime integration fixture
+        shell: powershell
+        run: |
+          .\scripts\Build-ProGo.ps1
+          .\tests\InstallerLiveRuntimeLeafTests.ps1
+
+  installer-success-tests:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Build and run complete standalone success host
+        shell: powershell
+        run: |
+          .\scripts\Build-ProGo.ps1
+          .\tests\InstallerSuccessBootstrap.ps1
+
+  ci-complete:
+    name: Exact-SHA complete CI gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests, windows-relay-tests]
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require all partitions on exact tested commit
+        env:
+          PROGO_EXPECTED_SHA: ${{ github.sha }}
+          PROGO_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 scripts/check_ci_aggregate.py

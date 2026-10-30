@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Web.Script.Serialization;
@@ -8,9 +8,12 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using Microsoft.Win32;
 
 namespace ProGo
 {
+    internal enum BridgeTransitionPhase { BeforeCommit, AfterCommit }
+
     internal sealed class CliProxyBridgeService : IDisposable
     {
         public const string Host = "127.0.0.1";
@@ -20,147 +23,214 @@ namespace ProGo
         private const int SocketTimeoutMs = 0;
 
         private readonly SettingsService settings;
-        private TcpListener listener;
-        private Thread acceptThread;
-        private volatile bool running;
+        private readonly Action<BridgeTransitionPhase> transitionProbe;
+        private volatile ListenerSession active;
+        private long consumerRevision;
+        internal long ConsumerRevision { get { return Interlocked.Read(ref consumerRevision); } }
         private readonly HashSet<TcpClient> clients = new HashSet<TcpClient>();
-
-        public CliProxyBridgeService(SettingsService settingsService)
-        {
-            settings = settingsService;
+        private readonly object retentionGate = new object();
+        private int nativeMutationRetentions;
+        private readonly List<PreparedBridgeConfiguration> pendingCleanup = new List<PreparedBridgeConfiguration>();
+        internal bool CleanupPending { get { lock (retentionGate) return pendingCleanup.Count != 0; } }
+        internal int[] RetainedPorts {
+            get { lock (retentionGate) {
+                var ports = new List<int>(); var current = active;
+                if (current != null) ports.Add(current.Port);
+                foreach (var value in pendingCleanup) if (value.Candidate != null && !ports.Contains(value.Candidate.Port)) ports.Add(value.Candidate.Port);
+                return ports.ToArray();
+            } }
         }
-
-        public bool IsRunning
+        internal IDisposable RetainForNativeMutation()
         {
-            get { return running; }
+            lock (retentionGate) nativeMutationRetentions++;
+            return new NativeRetention(this);
         }
-
-        public int Port { get { return listener == null ? settings.Current.HttpProxyPort : ((IPEndPoint)listener.LocalEndpoint).Port; } }
+        private sealed class NativeRetention : IDisposable
+        {
+            private CliProxyBridgeService owner;
+            internal NativeRetention(CliProxyBridgeService owner) { this.owner = owner; }
+            public void Dispose() {
+                var value = Interlocked.Exchange(ref owner, null);
+                if (value != null) lock (value.retentionGate) value.nativeMutationRetentions--;
+            }
+        }
+        internal sealed class ListenerSession
+        {
+            internal readonly TcpListener Server;
+            internal readonly int Port;
+            internal volatile bool Running;
+            internal ListenerSession(TcpListener server) { Server = server; Port = ((IPEndPoint)server.LocalEndpoint).Port; }
+            internal void Stop() { Running = false; try { Server.Stop(); } catch { } }
+        }
+        internal sealed class PreparedBridgeConfiguration
+        {
+            internal ListenerSession Candidate;
+            internal ProxyIntegrationState Integrations;
+            internal SettingsCommitReceipt Commit;
+            internal bool KeepRunning;
+            internal int Published;
+        }
+        public CliProxyBridgeService(SettingsService settingsService, Action<BridgeTransitionPhase> transitionProbe = null)
+        { settings = settingsService; this.transitionProbe = transitionProbe; }
+        public bool IsRunning { get { var value = active; return value != null && value.Running; } }
+        public int Port { get { var value = active; return value == null ? settings.Current.HttpProxyPort : value.Port; } }
         public string ProxyUrl { get { return UrlFor(Port); } }
         public static string UrlFor(int port)
         {
             if (port < 1 || port > 65535) throw new ArgumentOutOfRangeException("port");
             return "http://" + Host + ":" + port;
         }
-
         public bool Start(out string message)
         {
-            message = null;
-            return running || Configure(settings.Current.Clone(), false, true, out message);
+            message = null; if (IsRunning) return true;
+            SettingsSaveError error; var expected = settings.Capture();
+            var prepared = PrepareConfiguration(expected.Settings, false, true, expected, false, CancellationToken.None, out error);
+            if (prepared != null) PublishPrepared(prepared);
+            message = error == null ? null : error.Message; return prepared != null;
         }
-
         public bool Reconfigure(AppSettings proposed, bool pickFreePort, out string message)
         {
-            return Configure(proposed, pickFreePort, running, out message);
+            SettingsSaveError error; bool applied = ReconfigureDetailed(proposed, pickFreePort, out error);
+            message = error == null ? null : error.Message; return applied;
         }
-
+        internal bool ReconfigureDetailed(AppSettings proposed, bool pickFreePort, out SettingsSaveError error)
+        {
+            var prepared = PrepareConfiguration(proposed, pickFreePort, IsRunning, settings.Capture(), true, CancellationToken.None, out error);
+            if (prepared != null) PublishPrepared(prepared);
+            return prepared != null;
+        }
         private static TcpListener Bind(int port)
         {
             var server = new TcpListener(IPAddress.Loopback, port);
             try { server.ExclusiveAddressUse = true; server.Start(64); return server; }
             catch { server.Stop(); throw; }
         }
-
-        private bool Configure(AppSettings proposed, bool pickFreePort, bool keepRunning, out string message)
+        internal PreparedBridgeConfiguration PrepareConfiguration(AppSettings input, bool pickFreePort, bool keepRunning,
+            SettingsRevisionSnapshot expected, bool persist, CancellationToken token, out SettingsSaveError error)
         {
-            message = null;
-            TcpListener candidate = null;
-            ProxyIntegrationState integrations = null;
-            var previous = settings.Current;
-            try
-            {
-                UrlFor(proposed.HttpProxyPort); // Validate before touching settings or integrations.
-                bool reuse = running && !pickFreePort && proposed.HttpProxyPort == Port;
-                if (!reuse)
-                {
-                    try { candidate = Bind(pickFreePort ? 0 : proposed.HttpProxyPort); }
-                    catch (SocketException ex)
-                    {
+            error = SettingsValidation.Check(input); if (error != null) return null;
+            if (token.IsCancellationRequested) { error = new SettingsSaveError(SettingsField.General, "Применение настроек отменено."); return null; }
+            if (!RetryPendingCleanup(out error)) return null;
+            if (!IsRunning) {
+                try {
+                    var recovery = ProxyIntegrationState.ReadPortRecoveryMessage(expected.Settings.HttpProxyPort, token);
+                    if (recovery != null) { error = new SettingsSaveError(SettingsField.Applications, recovery); return null; }
+                } catch (OperationCanceledException) { error = new SettingsSaveError(SettingsField.General, "Применение настроек отменено."); return null; }
+                catch (Exception ex) {
+                    SafeLog.Error("Owned proxy port recovery check failed.", ex);
+                    error = new SettingsSaveError(SettingsField.Applications, "Не удалось проверить копии восстановления прокси. Проверьте доступ к ним; новое подключение не запущено."); return null;
+                }
+            }
+            var proposed = input.Clone(); var prepared = new PreparedBridgeConfiguration { KeepRunning = keepRunning };
+            var failedField = SettingsField.HttpProxyPort;
+            try {
+                token.ThrowIfCancellationRequested(); UrlFor(proposed.HttpProxyPort);
+                bool reuse = IsRunning && !pickFreePort && proposed.HttpProxyPort == Port;
+                if (!reuse) {
+                    TcpListener server;
+                    try { server = Bind(pickFreePort ? 0 : proposed.HttpProxyPort); }
+                    catch (SocketException ex) {
                         if (!proposed.AutoHttpProxyPort || (ex.SocketErrorCode != SocketError.AddressAlreadyInUse && ex.SocketErrorCode != SocketError.AccessDenied)) throw;
-                        candidate = Bind(0);
+                        server = Bind(0);
                     }
-                    proposed.HttpProxyPort = ((IPEndPoint)candidate.LocalEndpoint).Port;
+                    prepared.Candidate = new ListenerSession(server); proposed.HttpProxyPort = prepared.Candidate.Port;
+                    // Start before changing integrations or committing settings. The reserved
+                    // endpoint can already serve requests, but Port still publishes the old one.
+                    var session = prepared.Candidate; session.Running = true;
+                    var thread = new Thread(delegate() { AcceptLoop(session); });
+                    thread.IsBackground = true; thread.Name = "ProGo app proxy"; thread.Start();
                 }
-                if (proposed.HttpProxyPort != previous.HttpProxyPort)
-                {
-                    integrations = ProxyIntegrationState.Capture();
-                    integrations.MoveOwned(proposed.HttpProxyPort);
+                if (proposed.HttpProxyPort != expected.Settings.HttpProxyPort) {
+                    failedField = SettingsField.Applications; prepared.Integrations = ProxyIntegrationState.Capture();
+                    prepared.Integrations.MoveOwned(proposed.HttpProxyPort, token);
                 }
-                settings.Save(proposed);
-                if (keepRunning && !reuse)
-                {
-                    // The replacement port is already bound. Commit before releasing the old listener.
-                    var server = candidate;
-                    var thread = new Thread(delegate() { AcceptLoop(server); });
-                    thread.IsBackground = true; thread.Name = "ProGo app proxy";
-                    var old = listener;
-                    listener = server; running = true;
-                    try { thread.Start(); }
-                    catch { listener = old; running = old != null; throw; }
-                    candidate = null;
-                    try { if (old != null) old.Stop(); } catch { }
-                    acceptThread = thread;
-                    SafeLog.Info("Application HTTP proxy started. endpoint=" + ProxyUrl + ".");
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                bool rollbackFailed = false;
-                if (!ReferenceEquals(settings.Current, previous))
-                    try { settings.Save(previous); } catch (Exception rollback) { rollbackFailed = true; SafeLog.Error("Proxy settings rollback failed.", rollback); }
-                if (integrations != null)
-                    try { integrations.Restore(); } catch (Exception rollback) { rollbackFailed = true; SafeLog.Error("Proxy integration rollback failed.", rollback); }
-                SafeLog.Error("Application proxy configuration failed.", ex);
-                var socket = ex as SocketException;
-                message = socket != null && (socket.SocketErrorCode == SocketError.AddressAlreadyInUse || socket.SocketErrorCode == SocketError.AccessDenied)
-                    ? "Порт " + proposed.HttpProxyPort + " занят или зарезервирован Windows. Откройте Настройки → Порт приложений и нажмите «Подобрать свободный» или включите автоматический выбор."
-                    : "Не удалось применить порт приложений. Прежние настройки сохранены. Подробности — в журнале ProGo.";
-                if (rollbackFailed) message = "Смена порта отменена, но часть настроек приложений не удалось восстановить. Откройте журнал ProGo и заново примените настройки прокси.";
-                return false;
-            }
-            finally { if (candidate != null) candidate.Stop(); }
+                if (transitionProbe != null) transitionProbe(BridgeTransitionPhase.BeforeCommit);
+                token.ThrowIfCancellationRequested(); failedField = SettingsField.SettingsFile;
+                if (persist || proposed.HttpProxyPort != expected.Settings.HttpProxyPort) {
+                    if (!settings.TrySave(expected.Revision, proposed, out prepared.Commit))
+                        throw new SettingsRevisionConflictException();
+                } else if (settings.Current.HttpProxyPort != proposed.HttpProxyPort) throw new SettingsRevisionConflictException();
+                // Durable commit is the cancellation boundary. Finish publication even
+                // when Cancel or forced owner disposal arrives after this point.
+                if (transitionProbe != null) try { transitionProbe(BridgeTransitionPhase.AfterCommit); }
+                    catch (Exception ex) { SafeLog.Error("Bridge completion probe failed after commit.", ex); }
+                return prepared;
+            } catch (Exception ex) {
+                bool cleanupFailed = false;
+                if (prepared.Integrations != null) try { prepared.Integrations.Restore(); }
+                    catch (Exception rollback) { cleanupFailed = true; SafeLog.Error("Owned proxy transition cleanup incomplete.", rollback); }
+                if (cleanupFailed) { lock (retentionGate) pendingCleanup.Add(prepared); }
+                else if (prepared.Candidate != null) prepared.Candidate.Stop();
+                var socket = ex as SocketException; string message;
+                if (cleanupFailed) { failedField = SettingsField.Applications;
+                    message = "Перенос прокси не завершён: часть собственных изменений ещё не восстановлена. Порты сохранены: " +
+                        String.Join(", ", Array.ConvertAll(RetainedPorts, value => value.ToString(System.Globalization.CultureInfo.InvariantCulture))) +
+                        ". Проверьте права записи и повторите команду; ProGo сначала завершит очистку.";
+                } else if (ex is OperationCanceledException) message = "Применение настроек отменено. Позднейшие изменения вне ProGo сохранены.";
+                else if (ex is SettingsInitialLoadException) { failedField = SettingsField.SettingsFile; message = ex.Message; }
+                else if (ex is SettingsRevisionConflictException) message = "Настройки изменились во время сохранения. Более свежие значения сохранены; проверьте текущие параметры и повторите сохранение.";
+                else if (failedField == SettingsField.HttpProxyPort && socket != null && (socket.SocketErrorCode == SocketError.AddressAlreadyInUse || socket.SocketErrorCode == SocketError.AccessDenied))
+                    message = "Порт " + proposed.HttpProxyPort + " занят или зарезервирован Windows. Нажмите «Подобрать свободный» или включите автоматический выбор.";
+                else if (failedField == SettingsField.SettingsFile) message = "Не удалось сохранить файл настроек. Проверьте доступ к папке приложения и не открыт ли файл другой программой. Подробности — в журнале ProGo.";
+                else if (failedField == SettingsField.Applications) message = "Не удалось обновить настройки приложений. Собственные изменения восстановлены; позднейшие внешние настройки сохранены. Подробности — в журнале ProGo.";
+                else message = "Не удалось применить настройки. Проверьте текущее состояние и журнал ProGo.";
+                if (!(ex is OperationCanceledException) && !(ex is SettingsRevisionConflictException)) SafeLog.Error("Application proxy configuration failed.", ex);
+                error = new SettingsSaveError(failedField, message); return null;
+            } finally { Interlocked.Increment(ref consumerRevision); }
         }
-
+        private sealed class SettingsRevisionConflictException : Exception { }
+        internal bool RetryPendingCleanup(out SettingsSaveError error)
+        {
+            error = null; PreparedBridgeConfiguration[] pending;
+            lock (retentionGate) pending = pendingCleanup.ToArray();
+            foreach (var value in pending) {
+                try {
+                    value.Integrations.Restore();
+                    if (value.Candidate != null) value.Candidate.Stop();
+                    lock (retentionGate) pendingCleanup.Remove(value);
+                    Interlocked.Increment(ref consumerRevision);
+                } catch (Exception ex) {
+                    SafeLog.Error("Pending port transition cleanup failed.", ex);
+                    error = new SettingsSaveError(SettingsField.Applications, "Очистка прежнего переноса прокси ещё не завершена. Порты и копии сохранены; проверьте права записи и повторите команду."); return false;
+                }
+            }
+            return true;
+        }
+        internal void PublishPrepared(PreparedBridgeConfiguration value)
+        {
+            if (value == null || Interlocked.Exchange(ref value.Published, 1) != 0) return;
+            lock (retentionGate) {
+                if (value.Candidate != null) {
+                    if (value.KeepRunning) { var old = active; active = value.Candidate; if (old != null) old.Stop(); }
+                    else value.Candidate.Stop();
+                }
+            }
+            Interlocked.Increment(ref consumerRevision);
+        }
         public void Stop()
         {
-            running = false;
-            try { if (listener != null) listener.Stop(); } catch { }
-            listener = null;
+            lock (retentionGate) {
+                if (pendingCleanup.Count != 0) return;
+                var value = active; active = null; if (value != null) value.Stop();
+            }
+            Interlocked.Increment(ref consumerRevision);
             lock (clients) { foreach (var client in clients) try { client.Close(); } catch { } clients.Clear(); }
             SafeLog.Info("CLI HTTP CONNECT proxy stopped.");
         }
-
-        private void AcceptLoop(TcpListener server)
+        private void AcceptLoop(ListenerSession session)
         {
-            while (running && ReferenceEquals(listener, server))
-            {
-                try
-                {
-                    var client = server.AcceptTcpClient();
-                    lock (clients)
-                    {
-                        if (!running || !ReferenceEquals(listener, server) || clients.Count >= 128) { client.Close(); continue; }
+            while (session.Running) {
+                try {
+                    var client = session.Server.AcceptTcpClient();
+                    lock (clients) {
+                        if (!session.Running || clients.Count >= 128) { client.Close(); continue; }
                         clients.Add(client);
                     }
-                    client.NoDelay = true;
-                    client.ReceiveTimeout = ConnectTimeoutMs;
-                    client.SendTimeout = SocketTimeoutMs;
+                    client.NoDelay = true; client.ReceiveTimeout = ConnectTimeoutMs; client.SendTimeout = SocketTimeoutMs;
                     ThreadPool.QueueUserWorkItem(HandleClient, client);
-                }
-                catch (SocketException)
-                {
-                    if (running) Thread.Sleep(250);
-                }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    if (running) SafeLog.Error("CLI proxy accept failed.", ex);
-                    Thread.Sleep(250);
-                }
+                } catch (SocketException) { if (session.Running) Thread.Sleep(250); }
+                catch (ObjectDisposedException) { return; }
+                catch (Exception ex) { if (session.Running) { SafeLog.Error("CLI proxy accept failed.", ex); Thread.Sleep(250); } }
             }
         }
 
@@ -287,13 +357,12 @@ namespace ProGo
         private TcpClient ConnectThroughSocks(string targetHost, int targetPort)
         {
             var current = settings.Current;
-            var socks = new TcpClient();
+            var socks = SocksEndpoint.Connect(current.SocksHost, current.SocksPort, ConnectTimeoutMs, CancellationToken.None);
+            try
+            {
             socks.NoDelay = true;
             socks.ReceiveTimeout = ConnectTimeoutMs;
             socks.SendTimeout = SocketTimeoutMs;
-            try
-            {
-            ConnectWithTimeout(socks, current.SocksHost, current.SocksPort, ConnectTimeoutMs);
 
             var stream = socks.GetStream();
             stream.Write(new byte[] { 0x05, 0x01, 0x00 }, 0, 3);
@@ -381,17 +450,6 @@ namespace ProGo
             return request;
         }
 
-        private static void ConnectWithTimeout(TcpClient client, string host, int port, int timeoutMs)
-        {
-            var ar = client.BeginConnect(host, port, null, null);
-            if (!ar.AsyncWaitHandle.WaitOne(timeoutMs))
-            {
-                try { client.Close(); } catch { }
-                throw new TimeoutException("Timed out connecting to SOCKS endpoint.");
-            }
-            client.EndConnect(ar);
-        }
-
         private static void Relay(TcpClient left, TcpClient right)
         {
             var done = new ManualResetEvent(false);
@@ -442,15 +500,13 @@ namespace ProGo
             stream.Write(bytes, 0, bytes.Length);
         }
 
-        private static string SafeTarget(string host, int port)
-        {
-            if (String.IsNullOrWhiteSpace(host)) return "unknown";
-            return host + ":" + port;
-        }
 
         public void Dispose()
         {
-            Stop();
+            lock (retentionGate) {
+                if (nativeMutationRetentions != 0) return;
+                Stop();
+            }
         }
     }
 
@@ -466,6 +522,7 @@ namespace ProGo
         internal static string BackupPath { get { return Path.Combine(AppPaths.Root, "proxy-environment-backup.json"); } }
         internal static readonly string[] Names = { "ALL_PROXY", "HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY" };
         private const string OwnedPortKey = "ProGoAppliedPort";
+        private const string PendingTypedValuesKey = "ProGoPendingWindowsCorrections";
         private static string Expected(string name, int port) { return name == "NO_PROXY" ? "localhost,127.0.0.1,::1" : CliProxyBridgeService.UrlFor(port); }
         private static Dictionary<string, string> ReadBackup()
         {
@@ -484,6 +541,10 @@ namespace ProGo
         }
         public static void ApplyUserEnvironment(int port)
         {
+            ApplyUserEnvironment(port, SystemProxyService.WriteValue, BroadcastEnvironmentChange);
+        }
+        internal static void ApplyUserEnvironment(int port, Action<RegistryKey, string, WindowsProxyValue> writer, Action notification)
+        {
             CliProxyBridgeService.UrlFor(port);
             AppPaths.EnsureDirectories();
             var saved = ReadBackup();
@@ -496,10 +557,17 @@ namespace ProGo
                     saved[name] = String.Equals(value, Expected(name, port), StringComparison.OrdinalIgnoreCase) ? null : value;
                 }
             }
+            var corrections = ReadTypedCorrections(saved);
+            if (corrections.Count != 0) {
+                try { SystemProxyService.RetryTypedValues(corrections, writer); }
+                finally { SaveTypedCorrections(saved, corrections); }
+            }
             saved[OwnedPortKey] = port.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            File.WriteAllText(BackupPath, new JavaScriptSerializer().Serialize(saved));
-            foreach (var name in Names) SetUser(name, Expected(name, port));
-            BroadcastEnvironmentChange();
+            bool correctionFailed = PreserveLiveWindowsTypes(saved, delegate {
+                foreach (var name in Names) SetUser(name, Expected(name, port));
+                notification();
+            }, writer);
+            if (correctionFailed) throw new IOException("Не удалось сохранить типы настроек Windows после включения CLI. Копия сохранена; повторите выключение после проверки прав записи.");
             SafeLog.Info("Proxy environment applied for new terminals.");
         }
 
@@ -517,30 +585,123 @@ namespace ProGo
 
         public static bool IsAppliedToUserEnvironment(int port)
         {
-            return IsUserValue("ALL_PROXY", Expected("ALL_PROXY", port)) ||
-                   IsUserValue("HTTPS_PROXY", Expected("HTTPS_PROXY", port)) ||
-                   IsUserValue("HTTP_PROXY", Expected("HTTP_PROXY", port));
+            foreach (var name in Names) if (!IsUserValue(name, Expected(name, port))) return false;
+            return true;
+        }
+        internal static bool HasProxyEndpoint(int port)
+        {
+            foreach (var name in Names) if (name != "NO_PROXY" && IsUserValue(name, Expected(name, port))) return true;
+            return false;
+        }
+        internal static bool IsPartiallyApplied(int port)
+        {
+            if (IsAppliedToUserEnvironment(port)) return false;
+            foreach (var name in Names) if (IsUserValue(name, Expected(name, port))) return true;
+            return false;
         }
 
         public static void ClearUserEnvironmentIfOwned()
         {
+            ClearUserEnvironmentIfOwned(SystemProxyService.WriteValue, BroadcastEnvironmentChange);
+        }
+        // Native regression seams deny a correction or reproduce an observed notification
+        // normalization while still executing the real user-environment cleanup.
+        internal static void ClearUserEnvironmentIfOwned(Action<RegistryKey, string, WindowsProxyValue> writer,
+            Action notification)
+        {
             var saved = ReadBackup();
+            if (saved == null) return; // A completed cleanup must not reclaim a later matching external value.
             int port = OwnedPort(saved);
-            // Windows environment names are case-insensitive. Restore only values still owned by ProGo.
-            foreach (var name in Names)
-            {
-                string previous = null;
-                if (saved != null) saved.TryGetValue(name, out previous);
-                if (IsUserValue(name, Expected(name, port))) SetUser(name, previous);
+            var corrections = ReadTypedCorrections(saved);
+            if (corrections.Count != 0) {
+                try { SystemProxyService.RetryTypedValues(corrections, writer); }
+                finally { SaveTypedCorrections(saved, corrections); }
             }
+            bool correctionFailed = PreserveLiveWindowsTypes(saved, delegate {
+                // The .NET setter also broadcasts; protect the complete loop, not just the final notification.
+                // Windows names are case-insensitive. Restore only values still owned by ProGo.
+                foreach (var name in Names) {
+                    string previous; saved.TryGetValue(name, out previous);
+                    if (IsUserValue(name, Expected(name, port))) SetUser(name, previous);
+                }
+                notification();
+            }, writer);
+            if (correctionFailed) throw new IOException("Не удалось сохранить типы настроек Windows после выключения CLI. Копия сохранена; повторите выключение после проверки прав записи.");
+            // A failed notification or typed-value correction must retain the retry journal.
             if (File.Exists(BackupPath)) File.Delete(BackupPath);
-            BroadcastEnvironmentChange();
             SafeLog.Info("Previous proxy environment restored where still owned by ProGo.");
+        }
+
+        private static bool PreserveLiveWindowsTypes(Dictionary<string, string> saved, Action notification,
+            Action<RegistryKey, string, WindowsProxyValue> writer)
+        {
+            var failures = new List<WindowsProxyFieldBackup>();
+            SystemProxyService.PreserveTypedValues(notification, writer,
+                delegate(WindowsProxyFieldBackup correction, Exception failure) {
+                    failures.Add(correction);
+                    SafeLog.Info("CLI notification typed-value correction pending: " + correction.Name + ".");
+                }, delegate(Dictionary<string, WindowsProxyValue> before) {
+                    // Persist intended known normalization before the first setter.
+                    // A later failed replacement cannot discard these expectations.
+                    SaveTypedCorrections(saved, PrepareTypedCorrections(before));
+                });
+            // Narrow the guard only after the complete correction pass. If this
+            // replacement fails, the prepared receipt remains valid across restart.
+            SaveTypedCorrections(saved, failures);
+            return failures.Count != 0;
+        }
+        internal static List<WindowsProxyFieldBackup> PrepareTypedCorrections(Dictionary<string, WindowsProxyValue> before)
+        {
+            var guards = new List<WindowsProxyFieldBackup>();
+            foreach (var name in SystemProxyService.FieldNames) {
+                var expected = before[name]; WindowsProxyValue normalized = null;
+                if (expected.Exists && expected.Kind == RegistryValueKind.ExpandString)
+                    normalized = new WindowsProxyValue { Exists = true, Kind = RegistryValueKind.String, Data = expected.Data };
+                else if (name == "AutoDetect" && expected.Exists && expected.Kind == RegistryValueKind.DWord &&
+                    (expected.Data == "0" || expected.Data == "1")) normalized = new WindowsProxyValue();
+                if (normalized != null && SystemProxyService.IsTypedNormalization(name, expected, normalized))
+                    guards.Add(new WindowsProxyFieldBackup { Name = name, Original = expected, Applied = normalized, Pending = true });
+            }
+            return guards;
+        }
+
+        internal static List<WindowsProxyFieldBackup> ReadTypedCorrections(Dictionary<string, string> saved)
+        {
+            string json;
+            if (!saved.TryGetValue(PendingTypedValuesKey, out json)) return new List<WindowsProxyFieldBackup>();
+            var corrections = new JavaScriptSerializer().Deserialize<List<WindowsProxyFieldBackup>>(json);
+            if (corrections == null || corrections.Count > SystemProxyService.FieldNames.Length)
+                throw new IOException("Некорректная копия исправлений типов настроек Windows.");
+            var names = new HashSet<string>();
+            foreach (var correction in corrections) {
+                if (correction == null || Array.IndexOf(SystemProxyService.FieldNames, correction.Name) < 0 ||
+                    !names.Add(correction.Name) || !SystemProxyService.IsTypedNormalization(correction.Name, correction.Original, correction.Applied))
+                    throw new IOException("Некорректная копия исправлений типов настроек Windows.");
+            }
+            return corrections;
+        }
+        private static void SaveTypedCorrections(Dictionary<string, string> saved, List<WindowsProxyFieldBackup> corrections)
+        {
+            var pending = corrections.FindAll(f => f.Pending);
+            if (pending.Count == 0) saved.Remove(PendingTypedValuesKey);
+            else saved[PendingTypedValuesKey] = new JavaScriptSerializer().Serialize(pending);
+            string staging = BackupPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try {
+                File.WriteAllText(staging, new JavaScriptSerializer().Serialize(saved));
+                if (File.Exists(BackupPath)) File.Replace(staging, BackupPath, null); else File.Move(staging, BackupPath);
+            } finally { if (File.Exists(staging)) File.Delete(staging); }
         }
 
         public static bool OpenPowerShellWithEnvironment(int port, out string message)
         {
-            message = null;
+            Process process;
+            bool opened = OpenPowerShellWithEnvironment(port, out message, out process);
+            if (process != null) process.Dispose();
+            return opened;
+        }
+        internal static bool OpenPowerShellWithEnvironment(int port, out string message, out Process process)
+        {
+            message = null; process = null;
             var proxyUrl = CliProxyBridgeService.UrlFor(port);
             var powerShell = ResolvePowerShell();
             try
@@ -552,7 +713,8 @@ namespace ProGo
                     Arguments = "-NoExit -Command \"Write-Host 'ProGo CLI proxy is active: " + proxyUrl + "'; Get-ChildItem Env: | Where-Object { $_.Name -match 'proxy' } | Sort-Object Name\""
                 };
                 ApplyProcessEnvironment(psi, port);
-                Process.Start(psi);
+                process = Process.Start(psi);
+                if (process == null) throw new InvalidOperationException("PowerShell process was not created.");
                 SafeLog.Info("PowerShell opened with CLI proxy environment. proxy=" + proxyUrl + ".");
                 return true;
             }
@@ -600,13 +762,6 @@ namespace ProGo
             return String.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
         }
 
-        private static void ClearUserIfOwned(string name, string expected)
-        {
-            if (IsUserValue(name, expected))
-            {
-                Environment.SetEnvironmentVariable(name, null, EnvironmentVariableTarget.User);
-            }
-        }
 
         internal static void BroadcastEnvironmentChange()
         {

@@ -15,9 +15,15 @@ internal static class RelayHarness
                 string line;
                 while ((line = Console.ReadLine()) != null && line != "quit")
                 {
+                    if (line == "stop-owned") {
+                        relay.Stop(); Console.WriteLine("STOPPED " + relay.PendingStopCount); continue;
+                    }
                     if (line == "stop") relay.Stop();
                     Console.WriteLine(relay.Received + " " + relay.Sent + " " + relay.Returned + " " + relay.Dropped);
                 }
+                // This console owns its subprocess lifetime; Dispose itself is
+                // deliberately non-blocking for UI callers.
+                relay.StopAsync().GetAwaiter().GetResult();
             }
             return 0;
         }

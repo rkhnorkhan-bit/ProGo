@@ -1,8 +1,13 @@
 using System;
 using System.Drawing;
+using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace ProGo
 {
@@ -10,14 +15,15 @@ namespace ProGo
     internal class ProGoForm : Form
     {
         private readonly Icon brand = BrandIcon.Create();
+        private IDisposable themeObservation;
         public ProGoForm()
         {
             Font = UiTheme.Body;
             AutoScaleDimensions = new SizeF(96, 96);
             AutoScaleMode = AutoScaleMode.Dpi;
             Icon = brand;
-            BackColor = UiTheme.Background;
-            ForeColor = UiTheme.Text;
+            BackColor = UiTheme.WindowBackground;
+            ForeColor = UiTheme.WindowText;
             StartPosition = FormStartPosition.CenterScreen;
             DoubleBuffered = true;
         }
@@ -29,15 +35,106 @@ namespace ProGo
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            if (!SystemInformation.HighContrast)
-                try { int dark = 1; DwmSetWindowAttribute(Handle, 20, ref dark, 4); } catch { }
+            if (themeObservation == null) themeObservation = UiTheme.Observe(this, RefreshTheme);
+            RefreshTheme();
+        }
+        private void RefreshTheme()
+        {
+            UiTheme.Apply(this);
+            if (IsHandleCreated)
+                try { int dark = UiTheme.HighContrast ? 0 : 1; DwmSetWindowAttribute(Handle, 20, ref dark, 4); } catch { }
+            Invalidate(true);
         }
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr handle, int attribute, ref int value, int size);
         protected override void Dispose(bool disposing)
         {
-            if (disposing) brand.Dispose();
+            if (disposing) {
+                if (themeObservation != null) { themeObservation.Dispose(); themeObservation = null; }
+                brand.Dispose();
+            }
             base.Dispose(disposing);
+        }
+    }
+
+    // Modal WinForms windows may restore a null SynchronizationContext. These
+    // awaits resume through a persistent owner handle rather than that ambient
+    // context. Closing drops UI work but still settles completed continuations.
+    internal sealed class OwnerUiDispatcher : IDisposable
+    {
+        private readonly Control dispatcher = new Control();
+        private readonly int ownerThread = Thread.CurrentThread.ManagedThreadId;
+        private readonly object gate = new object();
+        private readonly List<Continuation> pending = new List<Continuation>();
+        private volatile bool closed;
+        internal OwnerUiDispatcher() { dispatcher.CreateControl(); }
+        internal bool Closed { get { return closed; } }
+        internal bool OnOwner { get { return Thread.CurrentThread.ManagedThreadId == ownerThread; } }
+        internal OwnerAwaitable<T> Await<T>(Task<T> task) { return new OwnerAwaitable<T>(this, task); }
+        internal OwnerAwaitable<object> Await(Task task) { return Await(AsResult(task)); }
+        private static async Task<object> AsResult(Task task) { await task.ConfigureAwait(false); return null; }
+        internal void PostUpdate(Action update)
+        {
+            if (OnOwner) { if (!closed) update(); return; }
+            Post(delegate { if (!closed) update(); });
+        }
+        private void Post(Action continuation)
+        {
+            var work = new Continuation(continuation);
+            lock (gate) {
+                if (!closed) {
+                    pending.Add(work);
+                    try {
+                        dispatcher.BeginInvoke((Action)delegate {
+                            lock (gate) pending.Remove(work);
+                            work.Run();
+                        });
+                        return;
+                    } catch (InvalidOperationException) { pending.Remove(work); }
+                }
+            }
+            // An unexpectedly unavailable handle is treated as owner loss.
+            Close(); work.Run();
+        }
+        internal void Close()
+        {
+            Continuation[] callbacks;
+            lock (gate) { if (closed) return; closed = true; callbacks = pending.ToArray(); pending.Clear(); }
+            foreach (var callback in callbacks) callback.Run();
+        }
+        public void Dispose() { Close(); dispatcher.Dispose(); }
+        private sealed class Continuation
+        {
+            private readonly Action callback; private int settled;
+            internal Continuation(Action callback) { this.callback = callback; }
+            internal void Run() { if (Interlocked.Exchange(ref settled, 1) == 0) callback(); }
+        }
+        internal struct OwnerAwaitable<T>
+        {
+            private readonly OwnerUiDispatcher owner; private readonly Task<T> task;
+            internal OwnerAwaitable(OwnerUiDispatcher owner, Task<T> task) { this.owner = owner; this.task = task; }
+            public Awaiter GetAwaiter() { return new Awaiter(owner, task); }
+            internal struct Awaiter : INotifyCompletion
+            {
+                private readonly OwnerUiDispatcher owner; private readonly Task<T> task;
+                internal Awaiter(OwnerUiDispatcher owner, Task<T> task) { this.owner = owner; this.task = task; }
+                public bool IsCompleted { get { return task.IsCompleted && owner.OnOwner; } }
+                public void OnCompleted(Action continuation)
+                {
+                    var target = owner;
+                    task.ConfigureAwait(false).GetAwaiter().OnCompleted(() => target.Post(continuation));
+                }
+                public T GetResult()
+                {
+                    if (owner.Closed) {
+                        // Observe a fault even when the closed owner no longer
+                        // consumes its result. Actual work has already settled.
+                        var ignored = task.Exception;
+                        throw new OperationCanceledException("Окно закрыто; обновление интерфейса отменено.");
+                    }
+                    return task.GetAwaiter().GetResult();
+                }
+            }
         }
     }
 
@@ -55,96 +152,260 @@ namespace ProGo
         public static readonly Font Strong = new Font("Segoe UI", 10f, FontStyle.Bold);
         public static readonly Font Title = new Font("Segoe UI", 23f, FontStyle.Bold);
         public static readonly Font Heading = new Font("Segoe UI", 14f, FontStyle.Bold);
+        // Standard dialogs/actions; dense data views and card actions are deliberate variants.
+        internal static readonly Padding DialogPadding = new Padding(24);
+        internal static readonly Padding DensePadding = new Padding(12);
+        internal static readonly Padding ActionPadding = new Padding(12, 4, 12, 4);
+        internal static readonly Padding ActionMargin = new Padding(0, 0, 10, 8);
+        internal const int ActionHeight = 38, CompactActionHeight = 32;
 
+        // The source is private and always reads Windows in production. Tests replace it
+        // only inside an isolated process; they never change the user's system theme.
+        private static Func<bool> contrastSource = () => SystemInformation.HighContrast;
+        internal static bool HighContrast { get { return contrastSource(); } }
+        internal static Color WindowBackground { get { return HighContrast ? SystemColors.Window : Background; } }
+        internal static Color WindowText { get { return HighContrast ? SystemColors.WindowText : Text; } }
+        internal static Color SurfaceBackground { get { return HighContrast ? SystemColors.Window : Surface; } }
+        internal static Color TextColor(Color normal) { return HighContrast ? SystemColors.WindowText : normal; }
+
+        // Follow visual rows rather than construction order (some status rows are added later).
+        // Reversed footer flows are traversed left-to-right; native input internals are untouched.
+        internal static void ConfigureKeyboardOrder(Control parent)
+        {
+            var children = new List<Control>();
+            foreach (Control child in parent.Controls) children.Add(child);
+            var table = parent as TableLayoutPanel;
+            if (table != null) children.Sort(delegate(Control a, Control b) {
+                int row = table.GetRow(a).CompareTo(table.GetRow(b));
+                return row != 0 ? row : table.GetColumn(a).CompareTo(table.GetColumn(b));
+            });
+            var flow = parent as FlowLayoutPanel;
+            if (flow != null && flow.FlowDirection == FlowDirection.RightToLeft) children.Reverse();
+            for (int i = 0; i < children.Count; i++) {
+                var child = children[i]; child.TabIndex = i;
+                if (child is Panel || child is TabControl || child is TabPage) ConfigureKeyboardOrder(child);
+            }
+        }
+
+        internal static IDisposable Observe(Control owner, Action refresh)
+        {
+            return new PreferenceObservation(owner, refresh);
+        }
+        private sealed class PreferenceObservation : IDisposable
+        {
+            private readonly Control owner;
+            private readonly Action refresh;
+            private volatile bool disposed;
+            internal PreferenceObservation(Control owner, Action refresh)
+            {
+                this.owner = owner; this.refresh = refresh;
+                SystemEvents.UserPreferenceChanged += Changed;
+            }
+            private void Changed(object sender, UserPreferenceChangedEventArgs e)
+            {
+                if (disposed || owner.IsDisposed || !owner.IsHandleCreated) return;
+                // SystemEvents may run off the UI thread. Do not block that thread,
+                // and recheck disposal when the queued refresh reaches the window.
+                try { owner.BeginInvoke((Action)delegate {
+                    if (!disposed && !owner.IsDisposed && owner.IsHandleCreated) refresh();
+                }); } catch (InvalidOperationException) { }
+            }
+            public void Dispose()
+            {
+                if (disposed) return;
+                disposed = true; SystemEvents.UserPreferenceChanged -= Changed;
+            }
+        }
+        private sealed class ThemeLabel : Label
+        {
+            private Color normalForeground = UiTheme.Text;
+            public override Color ForeColor {
+                get { return base.ForeColor; }
+                set { normalForeground = value; RefreshPalette(); }
+            }
+            internal void RefreshPalette() { base.ForeColor = TextColor(normalForeground); BackColor = Color.Transparent; }
+        }
+        internal static Label StatusLabel(Color color) { return new ThemeLabel { ForeColor = color }; }
         public static Label Label(string text, Font font, Color color)
         {
-            return new Label { Text = text, Font = font, ForeColor = color, AutoSize = true, Tag = "styled", Margin = new Padding(0, 0, 0, 8) };
+            return new ThemeLabel { Text = text, Font = font, ForeColor = color, AutoSize = true, Tag = "styled", Margin = new Padding(0, 0, 0, 8) };
         }
-        public static Button Button(string text, EventHandler click, bool primary)
+        public static Button Button(string text, EventHandler click, bool primary, DialogResult result = DialogResult.None)
         {
-            var b = new Button { Text = text, AutoSize = true, MinimumSize = new Size(118, 38), Padding = new Padding(12, 4, 12, 4), Margin = new Padding(0, 0, 10, 8), Tag = primary ? "primary" : null };
+            var b = new Button { Text = text, AutoSize = true, MinimumSize = new Size(118, ActionHeight), Padding = ActionPadding,
+                Margin = ActionMargin, DialogResult = result, Tag = primary ? "primary" : null };
             if (click != null) b.Click += click;
             StyleButton(b);
             return b;
         }
         public static void Apply(Control root)
         {
-            if (SystemInformation.HighContrast) return;
+            ApplyControl(root);
+            // Parents must receive their palette before panels inherit it.
             foreach (Control c in root.Controls) Apply(c);
-            if (Equals(root.Tag, "styled")) return;
-            root.ForeColor = Text;
+            root.Invalidate();
+        }
+        private static void ApplyControl(Control root)
+        {
+            var label = root as ThemeLabel;
+            if (label != null) { label.RefreshPalette(); return; }
+            root.ForeColor = WindowText;
             var button = root as Button;
             if (button != null) { StyleButton(button); return; }
             var grid = root as DataGridView;
             if (grid != null)
             {
-                grid.BackgroundColor = Surface; grid.GridColor = Border; grid.BorderStyle = BorderStyle.None;
+                grid.BackgroundColor = SurfaceBackground; grid.GridColor = HighContrast ? SystemColors.WindowText : Border; grid.BorderStyle = BorderStyle.None;
                 grid.EnableHeadersVisualStyles = false;
-                grid.ColumnHeadersDefaultCellStyle.BackColor = Field; grid.ColumnHeadersDefaultCellStyle.ForeColor = Muted;
-                grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = Field;
-                grid.DefaultCellStyle.BackColor = Surface; grid.DefaultCellStyle.ForeColor = Text;
-                grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(38, 76, 84); grid.DefaultCellStyle.SelectionForeColor = Text;
-                grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(25, 34, 49);
+                grid.ColumnHeadersDefaultCellStyle.BackColor = HighContrast ? SystemColors.Control : Field;
+                grid.ColumnHeadersDefaultCellStyle.ForeColor = HighContrast ? SystemColors.ControlText : Muted;
+                grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = grid.ColumnHeadersDefaultCellStyle.BackColor;
+                grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = grid.ColumnHeadersDefaultCellStyle.ForeColor;
+                grid.DefaultCellStyle.BackColor = SurfaceBackground; grid.DefaultCellStyle.ForeColor = WindowText;
+                grid.DefaultCellStyle.SelectionBackColor = HighContrast ? SystemColors.Highlight : Color.FromArgb(38, 76, 84);
+                grid.DefaultCellStyle.SelectionForeColor = HighContrast ? SystemColors.HighlightText : Text;
+                grid.AlternatingRowsDefaultCellStyle.BackColor = HighContrast ? SystemColors.Window : Color.FromArgb(25, 34, 49);
                 grid.RowTemplate.Height = 32; grid.RowHeadersVisible = false;
                 return;
             }
             if (root is TextBoxBase || root is ComboBox || root is NumericUpDown || root is ListBox)
             {
-                root.BackColor = Field;
+                root.BackColor = HighContrast ? SystemColors.Window : Field;
                 var combo = root as ComboBox;
                 if (combo != null)
                 {
-                    combo.FlatStyle = FlatStyle.Flat; combo.DrawMode = DrawMode.OwnerDrawFixed;
-                    combo.ItemHeight = Math.Max(24, combo.Font.Height + 8);
-                    combo.DrawItem -= DrawComboItem; combo.DrawItem += DrawComboItem;
+                    combo.DrawItem -= DrawComboItem;
+                    combo.FlatStyle = HighContrast ? FlatStyle.Standard : FlatStyle.Flat;
+                    combo.DrawMode = HighContrast ? DrawMode.Normal : DrawMode.OwnerDrawFixed;
+                    if (!HighContrast) {
+                        combo.ItemHeight = Math.Max(24, combo.Font.Height + 8);
+                        combo.DrawItem += DrawComboItem;
+                    }
                 }
                 var box = root as TextBoxBase; if (box != null) box.BorderStyle = BorderStyle.FixedSingle;
-                var list = root as ListBox; if (list != null) { list.BorderStyle = BorderStyle.None; list.ItemHeight = 28; }
+                var list = root as ListBox; if (list != null) { list.BorderStyle = HighContrast ? BorderStyle.FixedSingle : BorderStyle.None; list.ItemHeight = 28; }
             }
-            else if (root is TabControl || root is TabPage) root.BackColor = Background;
-            else if (root is Panel) root.BackColor = root.Parent == null ? Background : root.Parent.BackColor;
-            else if (root is Form) root.BackColor = Background;
+            else if (root is TabControl || root is TabPage || root is Form || root is WizardProgress) root.BackColor = WindowBackground;
+            else if (root is Panel) root.BackColor = Equals(root.Tag, "styled") ? SurfaceBackground : root.Parent == null ? WindowBackground : root.Parent.BackColor;
             else if (root is Label || root is CheckBox || root is RadioButton || root is PictureBox) root.BackColor = Color.Transparent;
+            var link = root as LinkLabel;
+            if (link != null) {
+                link.LinkColor = HighContrast ? SystemColors.HotTrack : Accent;
+                link.ActiveLinkColor = HighContrast ? SystemColors.WindowText : Text;
+                link.VisitedLinkColor = HighContrast ? SystemColors.HotTrack : Accent;
+                link.DisabledLinkColor = HighContrast ? SystemColors.GrayText : Muted;
+            }
         }
         private static void DrawComboItem(object sender, DrawItemEventArgs e)
         {
             var combo = (ComboBox)sender;
             bool selected = (e.State & DrawItemState.Selected) != 0;
-            using (var brush = new SolidBrush(selected ? Border : Field)) e.Graphics.FillRectangle(brush, e.Bounds);
+            using (var brush = new SolidBrush(HighContrast ? (selected ? SystemColors.Highlight : SystemColors.Window) : selected ? Border : Field)) e.Graphics.FillRectangle(brush, e.Bounds);
             string value = e.Index >= 0 ? combo.GetItemText(combo.Items[e.Index]) : combo.Text;
             var bounds = e.Bounds; bounds.Inflate(-5, 0);
-            TextRenderer.DrawText(e.Graphics, value, combo.Font, bounds, Text, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            TextRenderer.DrawText(e.Graphics, value, combo.Font, bounds, HighContrast ? (selected ? SystemColors.HighlightText : SystemColors.WindowText) : Text, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
             if ((e.State & DrawItemState.Focus) != 0) e.DrawFocusRectangle();
         }
         private static void StyleButton(Button b)
         {
-            if (SystemInformation.HighContrast) return;
-            bool primary = Equals(b.Tag, "primary");
+            // Styling must not replace an explicit accessible purpose. Without an
+            // override, the native button automatically announces its current Text.
+            b.EnabledChanged -= ButtonEnabledChanged; b.EnabledChanged += ButtonEnabledChanged;
+            b.Paint -= PaintDisabledButton; b.Paint += PaintDisabledButton;
+            if (HighContrast) {
+                b.FlatStyle = FlatStyle.Standard;
+                b.BackColor = SystemColors.Control; b.ForeColor = SystemColors.ControlText; b.UseVisualStyleBackColor = true;
+                b.Cursor = Cursors.Default;
+                return;
+            }
+            bool primary = b.Enabled && Equals(b.Tag, "primary");
             b.FlatStyle = FlatStyle.Flat;
             b.FlatAppearance.BorderSize = primary ? 0 : 1;
             b.FlatAppearance.BorderColor = Border;
             b.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(128, 244, 208) : Color.FromArgb(39, 54, 73);
             b.FlatAppearance.MouseDownBackColor = primary ? Color.FromArgb(55, 200, 157) : Border;
-            b.BackColor = primary ? Accent : Field; b.ForeColor = primary ? Background : Text;
-            b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false;
+            b.BackColor = primary ? Accent : Field; b.ForeColor = b.Enabled ? (primary ? Background : Text) : Muted;
+            b.Cursor = b.Enabled ? Cursors.Hand : Cursors.Default; b.UseVisualStyleBackColor = false;
             if (b.Height < 30 && b.Dock == DockStyle.None) b.Height = 32;
-            b.AccessibleName = b.Text;
+        }
+        private static void ButtonEnabledChanged(object sender, EventArgs e)
+        { var button = (Button)sender; StyleButton(button); button.Invalidate(); }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
+
+        private static void PaintDisabledButton(object sender, PaintEventArgs e)
+        {
+            var button = (Button)sender;
+            // Framework flat adapters darken BackColor for disabled glyphs, ignoring
+            // ForeColor. Correct only our text-only dark caption after native painting;
+            // the native Button still owns layout, input, accessibility and dialog roles.
+            // Images retain their native layout/rendering. High Contrast is wholly native.
+            if (HighContrast || button.Enabled || button.FlatStyle != FlatStyle.Flat ||
+                button.Image != null || button.ImageList != null) return;
+            var interior = button.ClientRectangle; interior.Inflate(-2, -2);
+            if (interior.Width <= 0 || interior.Height <= 0) return;
+            using (var brush = new SolidBrush(button.BackColor)) e.Graphics.FillRectangle(brush, interior);
+            var bounds = button.ClientRectangle;
+            bounds.X += button.Padding.Left + 5; bounds.Y += button.Padding.Top + 5;
+            bounds.Width -= button.Padding.Horizontal + 10; bounds.Height -= button.Padding.Vertical + 10;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            var align = button.TextAlign;
+            bool left = align == ContentAlignment.TopLeft || align == ContentAlignment.MiddleLeft || align == ContentAlignment.BottomLeft;
+            bool right = align == ContentAlignment.TopRight || align == ContentAlignment.MiddleRight || align == ContentAlignment.BottomRight;
+            bool rtl = button.RightToLeft == RightToLeft.Yes;
+            if (rtl) { bool swap = left; left = right; right = swap; }
+            bool top = ((int)align & 7) != 0, bottom = ((int)align & 1792) != 0;
+            bool hidePrefix = button.IsHandleCreated && (SendMessage(button.Handle, 0x0129, IntPtr.Zero, IntPtr.Zero).ToInt64() & 2) != 0;
+            if (button.UseCompatibleTextRendering) {
+                using (var format = new StringFormat()) {
+                    format.Alignment = (rtl ? right : left) ? StringAlignment.Near : (rtl ? left : right) ? StringAlignment.Far : StringAlignment.Center;
+                    format.LineAlignment = top ? StringAlignment.Near : bottom ? StringAlignment.Far : StringAlignment.Center;
+                    format.HotkeyPrefix = !button.UseMnemonic ? System.Drawing.Text.HotkeyPrefix.None : hidePrefix ? System.Drawing.Text.HotkeyPrefix.Hide : System.Drawing.Text.HotkeyPrefix.Show;
+                    if (rtl) format.FormatFlags |= StringFormatFlags.DirectionRightToLeft;
+                    if (button.AutoEllipsis) format.Trimming = StringTrimming.EllipsisCharacter;
+                    using (var brush = new SolidBrush(Muted)) e.Graphics.DrawString(button.Text, button.Font, brush, bounds, format);
+                }
+                return;
+            }
+            var flags = TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl |
+                TextFormatFlags.PreserveGraphicsClipping | TextFormatFlags.PreserveGraphicsTranslateTransform;
+            if (right) flags |= TextFormatFlags.Right; else if (!left) flags |= TextFormatFlags.HorizontalCenter;
+            if (bottom) flags |= TextFormatFlags.Bottom; else if (!top) flags |= TextFormatFlags.VerticalCenter;
+            if (rtl) flags |= TextFormatFlags.RightToLeft;
+            if (!button.UseMnemonic) flags |= TextFormatFlags.NoPrefix; else if (hidePrefix) flags |= TextFormatFlags.HidePrefix;
+            if (button.AutoEllipsis) flags |= TextFormatFlags.EndEllipsis;
+            // GDI's vertical flags do not align wrapped paragraphs. Measure within the
+            // same width first, then place the complete caption in its padded area.
+            int height = Math.Min(bounds.Height, TextRenderer.MeasureText(e.Graphics, button.Text, button.Font, bounds.Size, flags).Height);
+            if (bottom) bounds.Y += bounds.Height - height; else if (!top) bounds.Y += (bounds.Height - height) / 2;
+            bounds.Height = height;
+            TextRenderer.DrawText(e.Graphics, button.Text, button.Font, bounds, Muted, flags);
         }
         public static void Menu(ContextMenuStrip menu)
         {
             menu.Font = Body; menu.ShowImageMargin = false; menu.ShowCheckMargin = true;
-            if (SystemInformation.HighContrast) return;
-            menu.Renderer = new ToolStripProfessionalRenderer(new MenuColors());
-            StyleItems(menu.Items);
+            ApplyMenu(menu);
+            menu.Opening -= MenuOpening; menu.Opening += MenuOpening;
+            var observation = Observe(menu, () => ApplyMenu(menu));
+            menu.Disposed += delegate { observation.Dispose(); };
+        }
+        private static void MenuOpening(object sender, System.ComponentModel.CancelEventArgs e) { ApplyMenu((ContextMenuStrip)sender); }
+        private static void ApplyMenu(ContextMenuStrip menu)
+        {
+            menu.Renderer = HighContrast ? (ToolStripRenderer)new ToolStripSystemRenderer() : new ToolStripProfessionalRenderer(new MenuColors());
+            menu.ForeColor = HighContrast ? SystemColors.MenuText : Text;
+            menu.BackColor = HighContrast ? SystemColors.Menu : Surface;
+            StyleItems(menu.Items); menu.Invalidate(true);
         }
         private static void StyleItems(ToolStripItemCollection items)
         {
             foreach (ToolStripItem item in items)
             {
-                item.ForeColor = Text; item.BackColor = Surface;
+                item.ForeColor = HighContrast ? SystemColors.MenuText : Text; item.BackColor = HighContrast ? SystemColors.Menu : Surface;
                 item.Padding = new Padding(6, 5, 6, 5);
                 var sub = item as ToolStripMenuItem;
-                if (sub != null) { sub.DropDown.Font = Body; StyleItems(sub.DropDownItems); }
+                if (sub != null) { sub.DropDown.Font = Body; sub.DropDown.Renderer = HighContrast ? (ToolStripRenderer)new ToolStripSystemRenderer() : new ToolStripProfessionalRenderer(new MenuColors()); StyleItems(sub.DropDownItems); }
             }
         }
         private sealed class MenuColors : ProfessionalColorTable
@@ -171,13 +432,13 @@ namespace ProGo
         }
         protected override void OnPaint(PaintEventArgs e)
         {
-            var background = SystemInformation.HighContrast ? SystemColors.Window : UiTheme.Background;
+            var background = UiTheme.HighContrast ? SystemColors.Window : UiTheme.Background;
             e.Graphics.Clear(background);
             for (int i = 0; i < TabCount; i++)
             {
                 var bounds = GetTabRect(i); bool selected = i == SelectedIndex;
-                var fill = SystemInformation.HighContrast ? (selected ? SystemColors.Highlight : SystemColors.Window) : (selected ? UiTheme.Field : UiTheme.Background);
-                var color = SystemInformation.HighContrast ? (selected ? SystemColors.HighlightText : SystemColors.WindowText) : (selected ? UiTheme.Accent : UiTheme.Muted);
+                var fill = UiTheme.HighContrast ? (selected ? SystemColors.Highlight : SystemColors.Window) : (selected ? UiTheme.Field : UiTheme.Background);
+                var color = UiTheme.HighContrast ? (selected ? SystemColors.HighlightText : SystemColors.WindowText) : (selected ? UiTheme.Accent : UiTheme.Muted);
                 using (var brush = new SolidBrush(fill)) e.Graphics.FillRectangle(brush, bounds);
                 TextRenderer.DrawText(e.Graphics, TabPages[i].Text, UiTheme.Strong, bounds, color, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 if (selected) using (var pen = new Pen(color, 2)) e.Graphics.DrawLine(pen, bounds.Left + 16, bounds.Bottom - 2, bounds.Right - 16, bounds.Bottom - 2);
@@ -189,11 +450,11 @@ namespace ProGo
 
     internal sealed class SurfacePanel : Panel
     {
-        public SurfacePanel() { DoubleBuffered = true; BackColor = UiTheme.Surface; Tag = "styled"; Padding = new Padding(22); }
+        public SurfacePanel() { DoubleBuffered = true; BackColor = UiTheme.SurfaceBackground; Tag = "styled"; Padding = new Padding(22); }
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            using (var pen = new Pen(UiTheme.Border)) e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+            using (var pen = new Pen(UiTheme.HighContrast ? SystemColors.WindowText : UiTheme.Border)) e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
         }
     }
 }
@@ -204,7 +465,7 @@ namespace ProGo
     {
         private int step;
         internal int Step { get { return step; } set { step = value; AccessibleName = "Шаг " + (value + 1) + " из 5"; Invalidate(); } }
-        internal WizardProgress() { DoubleBuffered = true; Tag = "styled"; Height = 64; }
+        internal WizardProgress() { DoubleBuffered = true; Tag = "styled"; Height = 64; BackColor = UiTheme.WindowBackground; }
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e); e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
@@ -213,10 +474,10 @@ namespace ProGo
             for (int i = 0; i < 5; i++)
             {
                 int x = i * width;
-                using (var fill = new SolidBrush(i <= step ? UiTheme.Accent : UiTheme.Field)) e.Graphics.FillEllipse(fill, x + 1, 4, 26, 26);
-                TextRenderer.DrawText(e.Graphics, (i + 1).ToString(), UiTheme.Strong, new Rectangle(x + 1, 4, 26, 26), i <= step ? UiTheme.Background : UiTheme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-                if (i < 4) using (var pen = new Pen(UiTheme.Border, 2)) e.Graphics.DrawLine(pen, x + 39, 17, x + width - 12, 17);
-                TextRenderer.DrawText(e.Graphics, titles[i], UiTheme.Body, new Point(x, 38), i == step ? UiTheme.Accent : UiTheme.Muted);
+                using (var fill = new SolidBrush(UiTheme.HighContrast ? (i <= step ? SystemColors.Highlight : SystemColors.Window) : i <= step ? UiTheme.Accent : UiTheme.Field)) e.Graphics.FillEllipse(fill, x + 1, 4, 26, 26);
+                TextRenderer.DrawText(e.Graphics, (i + 1).ToString(), UiTheme.Strong, new Rectangle(x + 1, 4, 26, 26), UiTheme.HighContrast ? (i <= step ? SystemColors.HighlightText : SystemColors.WindowText) : i <= step ? UiTheme.Background : UiTheme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                if (i < 4) using (var pen = new Pen(UiTheme.HighContrast ? SystemColors.WindowText : UiTheme.Border, 2)) e.Graphics.DrawLine(pen, x + 39, 17, x + width - 12, 17);
+                TextRenderer.DrawText(e.Graphics, titles[i], UiTheme.HighContrast && i == step ? UiTheme.Strong : UiTheme.Body, new Point(x, 38), UiTheme.TextColor(i == step ? UiTheme.Accent : UiTheme.Muted));
             }
         }
     }

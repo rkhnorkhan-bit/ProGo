@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Globalization;
+using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
+using CancellationToken = System.Threading.CancellationToken;
+using CancellationTokenSource = System.Threading.CancellationTokenSource;
 
 namespace ProGo
 {
@@ -21,10 +25,33 @@ namespace ProGo
 
     internal static class AppPaths
     {
-        public static readonly string Root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppConstants.ProductName);
+        public static readonly string Root = ResolveRoot();
         public static readonly string SettingsPath = Path.Combine(Root, AppConstants.SettingsFileName);
         public static readonly string VaultPath = Path.Combine(Root, AppConstants.VaultFileName);
         public static readonly string LogPath = Path.Combine(Root, AppConstants.LogFileName);
+
+        private static string ResolveRoot()
+        {
+            // Maintenance smoke checks must not load/migrate a real profile.
+            // LOCALAPPDATA alone does not select the Windows known folder.
+            bool selfCheck = false;
+            var args = Environment.GetCommandLineArgs();
+            for (int index = 1; index < args.Length; index++)
+                if (String.Equals(args[index], "--self-check", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(args[index], "/self-check", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(args[index], "self-check", StringComparison.OrdinalIgnoreCase)) selfCheck = true;
+            if (selfCheck)
+            {
+                string isolated = Environment.GetEnvironmentVariable("PROGO_SELF_CHECK_ROOT");
+                if (!String.IsNullOrEmpty(isolated))
+                {
+                    if (!Path.IsPathRooted(isolated) || Directory.Exists(isolated) || File.Exists(isolated))
+                        throw new InvalidOperationException("Self-check requires a fresh absolute data root.");
+                    return Path.GetFullPath(isolated);
+                }
+            }
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppConstants.ProductName);
+        }
 
         public static void EnsureDirectories()
         {
@@ -35,22 +62,151 @@ namespace ProGo
     internal sealed class SshProfileSetting
     {
         public string Name { get; set; }
+        // Target remains the stable selection key; old profiles use an OpenSSH alias/address.
         public string Target { get; set; }
+        public string Server { get; set; }
+        public string User { get; set; }
+        public int Port { get; set; }
+        public string IdentityFile { get; set; }
+        public SshProfileSetting() { Port = 22; }
+        internal bool IsDirect { get { return !String.IsNullOrWhiteSpace(Server); } }
+        internal string Address { get { return IsDirect ? User + "@" + Server + ":" + Port : Target ?? ""; } }
 
         public SshProfileSetting Clone()
         {
             return new SshProfileSetting
             {
                 Name = Name,
-                Target = Target
+                Target = Target, Server = Server, User = User, Port = Port, IdentityFile = IdentityFile
             };
         }
 
         public override string ToString()
         {
-            if (String.IsNullOrWhiteSpace(Name)) return Target ?? String.Empty;
-            if (String.Equals(Name, Target, StringComparison.OrdinalIgnoreCase)) return Name;
-            return Name + " — " + Target;
+            if (String.IsNullOrWhiteSpace(Name)) return Address;
+            if (String.Equals(Name, Address, StringComparison.OrdinalIgnoreCase)) return Name;
+            return Name + " — " + Address;
+        }
+    }
+
+
+    // Keep Windows' service agent and the SSH client in the same OpenSSH distribution.
+    internal static class OpenSshClient
+    {
+        internal static string Executable
+        {
+            get { return Select(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess,
+                Environment.GetEnvironmentVariable("PATH"), File.Exists); }
+        }
+        internal static string Select(string windows, bool redirected, string path, Func<string, bool> exists)
+        {
+            if (!String.IsNullOrWhiteSpace(windows)) {
+                var system = Path.Combine(windows, redirected ? "Sysnative" : "System32", "OpenSSH", "ssh.exe");
+                if (exists(system)) return system;
+            }
+            foreach (var raw in (path ?? "").Split(Path.PathSeparator)) {
+                var directory = raw.Trim().Trim('"');
+                if (String.IsNullOrWhiteSpace(directory) || !Path.IsPathRooted(directory)) continue;
+                try { var candidate = Path.Combine(directory, "ssh.exe"); if (exists(candidate)) return candidate; }
+                catch (ArgumentException) { }
+            }
+            return "ssh.exe"; // Preserve the normal missing-client error when OpenSSH is absent.
+        }
+        internal static string AgentExecutable(string ssh)
+        { return SiblingExecutable(ssh, "ssh-add.exe"); }
+        internal static string KeygenExecutable(string ssh)
+        { return SiblingExecutable(ssh, "ssh-keygen.exe"); }
+        private static string SiblingExecutable(string ssh, string name)
+        {
+            if (!Path.IsPathRooted(ssh ?? "")) return null;
+            var path = Path.Combine(Path.GetDirectoryName(ssh), name);
+            return File.Exists(path) ? path : null;
+        }
+    }
+
+    // One source of SSH arguments for background tunnels, first login and diagnostics.
+    internal static class SshConnection
+    {
+        internal static SshProfileSetting Resolve(AppSettings settings, string target)
+        {
+            if (settings.SshProfiles != null)
+                foreach (var profile in settings.SshProfiles)
+                    if (profile != null && String.Equals(profile.Target, target, StringComparison.OrdinalIgnoreCase)) return profile.Clone();
+            return new SshProfileSetting { Target = target };
+        }
+        internal static string Signature(AppSettings settings)
+        {
+            var p = Resolve(settings, settings.SshProfile);
+            // Display names do not change the route. Use serialization to avoid ambiguous separators.
+            return new JavaScriptSerializer().Serialize(new[] { p.Target, p.Server, p.User,
+                p.IsDirect ? p.Port.ToString(CultureInfo.InvariantCulture) : "", p.IdentityFile });
+        }
+        internal static string KeyPath(string value)
+        {
+            return KeyPath(value, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        }
+        internal static string KeyPath(string value, string home)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return "";
+            if (value.IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) throw new ArgumentException("Путь SSH-ключа содержит недопустимые символы.");
+            if (value.StartsWith("~/", StringComparison.Ordinal) || value.StartsWith(@"~\", StringComparison.Ordinal)) {
+                var relative = value.Substring(2).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+                var root = Path.GetFullPath(home).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                var path = Path.GetFullPath(Path.Combine(root, relative));
+                if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Путь ~/ должен оставаться внутри профиля текущего пользователя.");
+                return path;
+            }
+            if (!Path.IsPathRooted(value)) throw new ArgumentException("Укажите полный путь SSH-ключа или ~/.ssh/имя_ключа.");
+            return value;
+        }
+        internal static void Validate(SshProfileSetting profile)
+        {
+            if (profile == null) throw new ArgumentException("Выберите SSH-подключение.");
+            if (!profile.IsDirect) {
+                var target = profile.Target ?? "";
+                if (target.Length == 0 || target[0] == '-' || !Regex.IsMatch(target, @"\A[A-Za-z0-9_.@:\[\]-]+\z"))
+                    throw new ArgumentException("Укажите имя из SSH config или user@host без пробелов и параметров команды.");
+                return;
+            }
+            var server = profile.Server ?? "";
+            var host = server.Trim('[', ']');
+            if (server.Length == 0 || server[0] == '-' || !Regex.IsMatch(server, @"\A[A-Za-z0-9_.:\[\]-]+\z") ||
+                Uri.CheckHostName(host) == UriHostNameType.Unknown)
+                throw new ArgumentException("Сервер: укажите IP-адрес или доменное имя без логина, порта и https://.");
+            if (!Regex.IsMatch(profile.User ?? "", @"\A[A-Za-z0-9_][A-Za-z0-9_.-]*\$?\z"))
+                throw new ArgumentException("Логин SSH: укажите пользователя сервера, например ubuntu или root.");
+            if (profile.Port < 1 || profile.Port > 65535) throw new ArgumentException("Порт SSH должен быть от 1 до 65535.");
+            var key = profile.IdentityFile ?? "";
+            KeyPath(key);
+        }
+        internal static string[] Arguments(SshProfileSetting profile)
+        {
+            Validate(profile);
+            if (!profile.IsDirect) return new[] { profile.Target };
+            var args = new List<string> { "-p", profile.Port.ToString(CultureInfo.InvariantCulture), "-l", profile.User };
+            if (!String.IsNullOrWhiteSpace(profile.IdentityFile)) {
+                args.Add("-i"); args.Add(KeyPath(profile.IdentityFile)); args.Add("-o"); args.Add("IdentitiesOnly=yes");
+            }
+            args.Add(profile.Server);
+            return args.ToArray();
+        }
+        internal static string CommandArguments(SshProfileSetting profile)
+        {
+            return String.Join(" ", Array.ConvertAll(Arguments(profile), Quote));
+        }
+        // Windows CRT/OpenSSH quoting: only slashes before quotes or the closing quote are doubled.
+        internal static string Quote(string value)
+        {
+            if (value == null) return "\"\"";
+            if (value.Length > 0 && value.IndexOfAny(new[] { ' ', '\t', '"' }) < 0) return value;
+            var result = new StringBuilder("\""); int slashes = 0;
+            foreach (var c in value) {
+                if (c == '\\') { slashes++; continue; }
+                result.Append('\\', c == '"' ? slashes * 2 + 1 : slashes);
+                result.Append(c); slashes = 0;
+            }
+            result.Append('\\', slashes * 2); result.Append('"'); return result.ToString();
         }
     }
 
@@ -65,9 +221,9 @@ namespace ProGo
         public bool AutoSwitchSshProfile { get; set; }
         public bool AutoStartSocks { get; set; }
         public bool AutoRestartSocks { get; set; }
-        public bool AutoApplyProxy { get; set; }
+        public bool AutoCliProxy { get; set; }
         public bool AutoSystemProxy { get; set; }
-        public bool AutoCodexProxy { get; set; }
+        public bool TrayCloseExplained { get; set; }
         public int ClipboardClearSeconds { get; set; }
         public string TestEndpoint { get; set; }
 
@@ -95,61 +251,334 @@ namespace ProGo
                 AutoSwitchSshProfile = false,
                 AutoStartSocks = false,
                 AutoRestartSocks = true,
-                AutoApplyProxy = false,
+                AutoCliProxy = false,
                 ClipboardClearSeconds = 30,
                 TestEndpoint = "https://api.openai.com/v1/models"
             };
         }
     }
 
+    internal enum SettingsField { General, SocksHost, SocksPort, SshProfile, TestEndpoint, HttpProxyPort, ClipboardClearSeconds, SettingsFile, Applications, Startup }
+    internal enum SettingsErrorSection { General, Connections, Diagnostics, Ports, Storage, Applications }
+
+    internal sealed class SettingsSaveError
+    {
+        internal readonly SettingsField Field;
+        internal readonly string Message;
+        internal SettingsSaveError(SettingsField field, string message) { Field = field; Message = message; }
+        internal SettingsErrorSection Section {
+            get {
+                switch (Field) {
+                    case SettingsField.Startup: case SettingsField.SocksHost: case SettingsField.SocksPort: case SettingsField.SshProfile: return SettingsErrorSection.Connections;
+                    case SettingsField.TestEndpoint: return SettingsErrorSection.Diagnostics;
+                    case SettingsField.HttpProxyPort: return SettingsErrorSection.Ports;
+                    case SettingsField.ClipboardClearSeconds: return SettingsErrorSection.Storage;
+                    case SettingsField.Applications: return SettingsErrorSection.Applications;
+                    default: return SettingsErrorSection.General;
+                }
+            }
+        }
+    }
+
+    internal static class SettingsValidation
+    {
+        internal static SettingsSaveError Check(AppSettings settings)
+        {
+            if (settings == null) return new SettingsSaveError(SettingsField.General, "Настройки не переданы. Откройте окно настроек заново.");
+            var host = settings.SocksHost ?? "";
+            var bareHost = host.Trim('[', ']');
+            var type = Uri.CheckHostName(bareHost);
+            bool brackets = host.IndexOfAny(new[] { '[', ']' }) >= 0;
+            if ((brackets && (type != UriHostNameType.IPv6 || host != "[" + bareHost + "]")) || host.Length == 0 || host.Length > 253 || host[0] == '-' ||
+                !Regex.IsMatch(host, @"\A[A-Za-z0-9_.:\[\]-]+\z") || type == UriHostNameType.Unknown ||
+                (Regex.IsMatch(host, @"\A[0-9.]+\z") && type != UriHostNameType.IPv4))
+                return new SettingsSaveError(SettingsField.SocksHost, "Адрес SOCKS-туннеля: укажите IP или домен без логина, порта и https://.");
+            if (settings.SocksPort < 1 || settings.SocksPort > 65535)
+                return new SettingsSaveError(SettingsField.SocksPort, "Порт SOCKS-туннеля должен быть от 1 до 65535.");
+            if (settings.HttpProxyPort < 1 || settings.HttpProxyPort > 65535)
+                return new SettingsSaveError(SettingsField.HttpProxyPort, "Порт приложений должен быть от 1 до 65535.");
+            if (settings.ClipboardClearSeconds < 5 || settings.ClipboardClearSeconds > 3600)
+                return new SettingsSaveError(SettingsField.ClipboardClearSeconds, "Время очистки буфера должно быть от 5 до 3600 секунд.");
+            var address = settings.TestEndpoint ?? "";
+            Uri endpoint;
+            if (address.Length == 0 || Regex.IsMatch(address, @"[\s\\\x00]") ||
+                !Uri.TryCreate(address, UriKind.Absolute, out endpoint) ||
+                (endpoint.Scheme != Uri.UriSchemeHttp && endpoint.Scheme != Uri.UriSchemeHttps) ||
+                String.IsNullOrWhiteSpace(endpoint.Host) || endpoint.UserInfo.Length != 0 ||
+                endpoint.Port < 1 || endpoint.Port > 65535 || Uri.CheckHostName(endpoint.Host.Trim('[', ']')) == UriHostNameType.Unknown)
+                return new SettingsSaveError(SettingsField.TestEndpoint, "Сайт проверки: укажите полный адрес http:// или https:// без логина, пароля и пробелов.");
+            if (settings.AutoStartSocks && String.IsNullOrWhiteSpace(settings.SshProfile))
+                return new SettingsSaveError(SettingsField.SshProfile, "Выберите SSH-сервер для подключения при запуске или снимите эту галочку.");
+            try {
+                if (!String.IsNullOrWhiteSpace(settings.SshProfile)) SshConnection.Validate(SshConnection.Resolve(settings, settings.SshProfile));
+                if (settings.SshProfiles != null) foreach (var profile in settings.SshProfiles) SshConnection.Validate(profile);
+            } catch (ArgumentException ex) { return new SettingsSaveError(SettingsField.SshProfile, "SSH-подключение: " + ex.Message); }
+            return null;
+        }
+    }
+
+    internal sealed class SettingsRevisionSnapshot
+    {
+        internal readonly AppSettings Settings;
+        internal readonly long Revision;
+        internal SettingsRevisionSnapshot(AppSettings settings, long revision) { Settings = settings; Revision = revision; }
+    }
+
+    internal sealed class SettingsCommitReceipt
+    {
+        internal readonly SettingsRevisionSnapshot Before;
+        internal readonly long Revision;
+        internal SettingsCommitReceipt(SettingsRevisionSnapshot before, long revision) { Before = before; Revision = revision; }
+    }
+
+    internal sealed class SettingsInitialLoadException : IOException
+    {
+        internal SettingsInitialLoadException() : base("Настройки не были прочитаны при запуске. Исходные данные не изменены; запись отключена. Проверьте доступ и формат файла, затем перезапустите ProGo.") { }
+    }
+
+    internal enum SettingsLaunchRevisionState { Acquired, Busy, Changed }
+
     internal sealed class SettingsService : IDisposable
     {
-        private readonly JavaScriptSerializer serializer = new JavaScriptSerializer();
-        public AppSettings Current { get; private set; }
-
-        public SettingsService()
+        private sealed class PublishedSettings
         {
-            Current = Load();
+            internal readonly AppSettings Settings;
+            internal readonly long Revision;
+            internal PublishedSettings(AppSettings settings, long revision) { Settings = settings; Revision = revision; }
+        }
+        private readonly object commitGate = new object();
+        private readonly Action beforeReplace;
+        private volatile PublishedSettings published;
+        private volatile bool initialLoadFailed;
+        private Dictionary<string, object> unknownFields = new Dictionary<string, object>(StringComparer.Ordinal);
+        public AppSettings Current { get { var value = published; return value == null ? null : value.Settings; } }
+        internal long Revision { get { var value = published; return value == null ? 0 : value.Revision; } }
+
+        public SettingsService() : this(null) { }
+        internal SettingsService(Action beforeReplace)
+        {
+            this.beforeReplace = beforeReplace;
+            var loaded = Load();
+            var value = published;
+            published = new PublishedSettings(loaded, value == null ? 0 : value.Revision);
+        }
+
+        internal SettingsRevisionSnapshot Capture()
+        {
+            // Read one memory publication, without waiting behind a disk writer.
+            var value = published;
+            return new SettingsRevisionSnapshot(value.Settings.Clone(), value.Revision);
+        }
+
+        // Only the final synchronous spawn admission may retain this lease.
+        // Never await, perform preparation/file IO, log, call Save or invoke UI
+        // while holding it. Busy writers are retried by the launch owner outside
+        // its process gate; a changed revision invalidates the old preparation.
+        internal SettingsLaunchRevisionState TryAcquireLaunchRevision(SettingsRevisionSnapshot expected, out IDisposable lease)
+        {
+            lease = null;
+            if (expected == null) return SettingsLaunchRevisionState.Changed;
+            if (!System.Threading.Monitor.TryEnter(commitGate)) return SettingsLaunchRevisionState.Busy;
+            try {
+                var value = published;
+                if (value == null || value.Revision != expected.Revision) return SettingsLaunchRevisionState.Changed;
+                lease = new LaunchRevisionLease(commitGate);
+                return SettingsLaunchRevisionState.Acquired;
+            }
+            finally { if (lease == null) System.Threading.Monitor.Exit(commitGate); }
+        }
+        private sealed class LaunchRevisionLease : IDisposable
+        {
+            private readonly object gate;
+            private readonly int owner = System.Threading.Thread.CurrentThread.ManagedThreadId;
+            private bool released;
+            internal LaunchRevisionLease(object gate) { this.gate = gate; }
+            public void Dispose()
+            {
+                if (released) return;
+                // A wrong-thread dispose must not forget the actual owner's lock.
+                if (System.Threading.Thread.CurrentThread.ManagedThreadId != owner)
+                    throw new InvalidOperationException("Settings launch lease must be released on its acquiring thread.");
+                released = true; System.Threading.Monitor.Exit(gate);
+            }
         }
 
         public AppSettings Load()
         {
-            AppPaths.EnsureDirectories();
-            if (!File.Exists(AppPaths.SettingsPath))
-            {
-                var defaults = AppSettings.Defaults();
-                Save(defaults);
-                return defaults;
-            }
-
+            bool initial = published == null;
             try
             {
-                var text = File.ReadAllText(AppPaths.SettingsPath);
-                var settings = serializer.Deserialize<AppSettings>(text) ?? AppSettings.Defaults();
+                AppPaths.EnsureDirectories();
+                string text;
+                try { text = File.ReadAllText(AppPaths.SettingsPath); }
+                catch (FileNotFoundException) { return LoadMissing(initial); }
+                catch (DirectoryNotFoundException) { return LoadMissing(initial); }
+                var unknown = ReadUnknownFields(text);
+                var settings = DeserializeSettings(text);
                 Normalize(settings);
+                // A later detached read cannot clear a failed initial load or
+                // replace the trusted fields captured by this instance.
+                if (initial) unknownFields = unknown;
                 return settings;
             }
             catch (Exception ex)
             {
-                SafeLog.Error("Settings load failed; using defaults.", ex);
+                if (initial) initialLoadFailed = true;
+                SafeLog.Error("Settings load failed; using unsaved defaults.", ex);
                 return AppSettings.Defaults();
             }
+        }
+        private AppSettings LoadMissing(bool initial)
+        {
+            var defaults = AppSettings.Defaults();
+            if (!initial) return defaults; // Public Load stays a detached read.
+            // A file created after the missing read belongs to another writer.
+            // Exclusive Move must fail instead of replacing its unread settings.
+            lock (commitGate) SaveCore(defaults, CancellationToken.None, true);
+            SafeLog.Info("Initial default settings saved.");
+            return Current;
         }
 
         public void Save(AppSettings settings)
         {
-            Normalize(settings);
+            if (settings == null) throw new ArgumentNullException("settings");
+            lock (commitGate) SaveCore(settings);
+            SafeLog.Info("Settings saved.");
+        }
+
+        internal bool TrySave(long expectedRevision, AppSettings candidate, out SettingsCommitReceipt receipt)
+        {
+            receipt = null;
+            lock (commitGate) {
+                if (published.Revision != expectedRevision) return false;
+                var before = new SettingsRevisionSnapshot(published.Settings.Clone(), published.Revision);
+                SaveCore(candidate);
+                receipt = new SettingsCommitReceipt(before, published.Revision);
+            }
+            SafeLog.Info("Settings saved."); return true;
+        }
+
+        internal bool TryRollback(SettingsCommitReceipt receipt)
+        {
+            if (receipt == null) return true;
+            lock (commitGate) {
+                if (published.Revision != receipt.Revision) return false;
+                SaveCore(receipt.Before.Settings);
+            }
+            SafeLog.Info("Own settings change rolled back."); return true;
+        }
+
+        internal void MarkTrayCloseExplained(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            lock (commitGate)
+            {
+                token.ThrowIfCancellationRequested();
+                if (published.Settings.TrayCloseExplained) return;
+                var candidate = published.Settings.Clone(); candidate.TrayCloseExplained = true;
+                SaveCore(candidate, token);
+            }
+            SafeLog.Info("Tray explanation preference saved.");
+        }
+
+        // No proxy/UI callbacks run inside this gate. The only injected hook is
+        // the test seam immediately before the real atomic file replacement.
+        private void SaveCore(AppSettings settings, CancellationToken token = default(CancellationToken), bool requireMissing = false)
+        {
+            // Every persistence entry point converges here, including asynchronous
+            // UI commits, automatic profile selection, tray updates and rollback.
+            // Unsaved fallback defaults must never replace an unread original.
+            if (initialLoadFailed) throw new SettingsInitialLoadException();
+            var candidate = settings.Clone();
+            Normalize(candidate);
+            var json = new JavaScriptSerializer();
+            var values = json.Deserialize<Dictionary<string, object>>(json.Serialize(candidate));
+            foreach (var entry in unknownFields) values.Add(entry.Key, entry.Value);
+            var text = json.Serialize(values);
+            token.ThrowIfCancellationRequested();
             AppPaths.EnsureDirectories();
             var pending = AppPaths.SettingsPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
-                File.WriteAllText(pending, serializer.Serialize(settings));
-                if (File.Exists(AppPaths.SettingsPath)) File.Replace(pending, AppPaths.SettingsPath, null);
+                File.WriteAllText(pending, text);
+                if (beforeReplace != null) beforeReplace();
+                token.ThrowIfCancellationRequested();
+                if (!requireMissing && File.Exists(AppPaths.SettingsPath)) File.Replace(pending, AppPaths.SettingsPath, null);
                 else File.Move(pending, AppPaths.SettingsPath);
+                var previous = published;
+                published = new PublishedSettings(candidate, previous == null ? 1 : previous.Revision + 1);
             }
             finally { if (File.Exists(pending)) File.Delete(pending); }
-            Current = settings;
+        }
+
+        internal bool TrySelectWorkingProfile(SettingsRevisionSnapshot expected, string target)
+        {
+            if (expected == null || String.IsNullOrWhiteSpace(target)) return false;
+            lock (commitGate)
+            {
+                var value = published;
+                var current = value.Settings;
+                if (value.Revision != expected.Revision || !current.AutoSwitchSshProfile ||
+                    current.SshProfile != expected.Settings.SshProfile ||
+                    current.SocksHost != expected.Settings.SocksHost || current.SocksPort != expected.Settings.SocksPort ||
+                    SshConnection.Signature(current) != SshConnection.Signature(expected.Settings) ||
+                    String.Equals(current.SshProfile, target, StringComparison.OrdinalIgnoreCase)) return false;
+                var candidate = current.Clone(); candidate.SshProfile = target;
+                SaveCore(candidate);
+            }
+            SafeLog.Info("Settings saved."); return true;
+        }
+
+        internal void SetAutoRestart(bool enabled)
+        {
+            lock (commitGate)
+            {
+                var candidate = published.Settings.Clone(); candidate.AutoRestartSocks = enabled;
+                SaveCore(candidate);
+            }
             SafeLog.Info("Settings saved.");
+        }
+
+        private static Dictionary<string, object> ReadUnknownFields(string text)
+        {
+            var values = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(text);
+            if (values == null) throw new InvalidDataException("Settings must be a JSON object.");
+            var known = KnownFieldNames();
+            var unknown = new Dictionary<string, object>(StringComparer.Ordinal);
+            if (values != null) foreach (var entry in values)
+                if (!known.Contains(entry.Key)) unknown[entry.Key] = entry.Value;
+            return unknown;
+        }
+
+        private static HashSet<string> KnownFieldNames()
+        {
+            var known = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var property in typeof(AppSettings).GetProperties()) known.Add(property.Name);
+            known.Add("AutoApplyProxy"); known.Add("AutoCodexProxy");
+            return known;
+        }
+
+        internal static AppSettings DeserializeSettings(string text)
+        {
+            var json = new JavaScriptSerializer();
+            var settings = json.Deserialize<AppSettings>(text) ?? AppSettings.Defaults();
+            var values = json.Deserialize<Dictionary<string, object>>(text);
+            if (values == null) return settings;
+            var recognized = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            var known = KnownFieldNames();
+            foreach (var entry in values) if (known.Contains(entry.Key)) recognized.Add(entry.Key, entry.Value);
+            values = recognized; // Unknown JSON keys retain their original case and values.
+            // A new explicit false wins over stale legacy fields. Save writes
+            // only AutoCliProxy, so turning it off cannot resurrect a legacy on.
+            if (!values.ContainsKey("AutoCliProxy"))
+                settings.AutoCliProxy = LegacyFlag(values, "AutoApplyProxy") || LegacyFlag(values, "AutoCodexProxy");
+            return settings;
+        }
+
+        private static bool LegacyFlag(Dictionary<string, object> values, string name)
+        {
+            object value;
+            return values.TryGetValue(name, out value) && value is bool && (bool)value;
         }
 
         private static void Normalize(AppSettings settings)
@@ -176,7 +605,10 @@ namespace ProGo
                     var name = (profile.Name ?? String.Empty).Trim();
                     if (String.IsNullOrWhiteSpace(name)) name = target;
                     if (ContainsTarget(normalized, target)) continue;
-                    normalized.Add(new SshProfileSetting { Name = name, Target = target });
+                    var copy = profile.Clone(); copy.Name = name; copy.Target = target;
+                    copy.Server = (copy.Server ?? "").Trim(); copy.User = (copy.User ?? "").Trim();
+                    copy.IdentityFile = (copy.IdentityFile ?? "").Trim();
+                    normalized.Add(copy);
                 }
             }
 
@@ -209,7 +641,6 @@ namespace ProGo
 
     internal static class SafeLog
     {
-        private static readonly object Gate = new object();
         private static readonly Regex[] Redactions = new[]
         {
             new Regex("(?i)(pin|secret|token|password|authorization|api[_ -]?key)\\s*[:=]\\s*[^\\s,;]+", RegexOptions.Compiled),
@@ -226,25 +657,57 @@ namespace ProGo
             Write("ERROR", message, ex);
         }
 
+        private static readonly BoundedLogQueue writer = new BoundedLogQueue(delegate(string record) {
+            var probe = BeforeDiskWrite; if (probe != null) probe(record);
+            AppPaths.EnsureDirectories();
+            return BoundedLog.TryWrite(AppPaths.LogPath, record);
+        });
+        internal static Action<string> BeforeDiskWrite;
+        internal static Task FlushAsync() { return writer.DrainAsync(); }
+        internal static Task WriteWork { get { return writer.Work; } }
+        private static readonly object ownerGate = new object();
+        private static long ownerEpoch;
+        internal static long BeginOwner()
+        {
+            lock (ownerGate) { ownerEpoch++; writer.Resume(); return ownerEpoch; }
+        }
+        internal static Task SuspendOwnerAsync(long expected)
+        {
+            lock (ownerGate) return expected == ownerEpoch ? writer.SuspendAsync() : Task.FromResult(false);
+        }
+        internal static void ResumeOwner(long expected)
+        {
+            lock (ownerGate) { if (expected == ownerEpoch) writer.Resume(); }
+        }
+        internal static Task SealProcessAsync()
+        {
+            lock (ownerGate) { ownerEpoch++; return writer.SuspendAsync(); }
+        }
+
+        private static string BoundedInput(string text)
+        {
+            // Never cut a raw secret in half before redaction. Oversized input
+            // is omitted in full; ordinary bounded text retains the old policy.
+            return text != null && text.Length > BoundedLog.MaxRecordChars ? "[oversized detail omitted]" : text;
+        }
         private static void Write(string level, string message, Exception ex)
         {
             try
             {
-                AppPaths.EnsureDirectories();
-                var line = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz") + " [" + level + "] " + Redact(message);
-                if (ex != null)
-                {
-                    line += " | " + Redact(ex.GetType().Name + ": " + ex.Message);
+                var line = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz") + " [" + level + "] " + Redact(BoundedInput(message));
+                if (ex != null) line += " | " + ex.GetType().Name + ": " + Redact(BoundedInput(ex.Message));
+                // Queue only an already-redacted bounded immutable string. No
+                // Exception, raw message, AppPaths or disk work escapes to it.
+                if (line.Length > BoundedLog.MaxRecordChars) {
+                    const string marker = " [truncated]"; int length = BoundedLog.MaxRecordChars - marker.Length;
+                    if (Char.IsHighSurrogate(line[length - 1])) length--;
+                    line = line.Substring(0, length) + marker;
                 }
-
-                lock (Gate)
-                {
-                    File.AppendAllText(AppPaths.LogPath, line + Environment.NewLine);
-                }
+                writer.TryEnqueue(line);
             }
             catch
             {
-                // Logging must never crash the tray application.
+                // Best-effort logging must never crash or wait on a native sink.
             }
         }
 
@@ -260,12 +723,119 @@ namespace ProGo
         }
     }
 
+    // Host/Format/CreateClient never resolve DNS or connect. Bounded Connect waits
+    // asynchronous DNS/address attempts within the caller's existing total budget.
+    internal static class SocksEndpoint
+    {
+        internal static string Host(string host)
+        {
+            if (String.IsNullOrEmpty(host) || host.Length < 3 || host[0] != '[' || host[host.Length - 1] != ']') return host;
+            var inner = host.Substring(1, host.Length - 2); IPAddress address;
+            if (inner.IndexOfAny(new[] { '[', ']' }) >= 0 || !IPAddress.TryParse(inner, out address) || address.AddressFamily != AddressFamily.InterNetworkV6) return host;
+            return inner;
+        }
+        internal static string Format(string host, int port)
+        {
+            var bare = Host(host); IPAddress address;
+            if (IPAddress.TryParse(bare, out address) && address.AddressFamily == AddressFamily.InterNetworkV6 &&
+                bare.IndexOfAny(new[] { '[', ']' }) < 0) bare = "[" + bare + "]";
+            return bare + ":" + port.ToString(CultureInfo.InvariantCulture);
+        }
+        internal static TcpClient CreateClient(string host)
+        {
+            IPAddress address;
+            bool literal = IPAddress.TryParse(Host(host), out address);
+            if ((literal && address.AddressFamily == AddressFamily.InterNetwork) || (!literal && !Socket.OSSupportsIPv6))
+                return new TcpClient(AddressFamily.InterNetwork);
+            // IPv6 literals keep their family; dual mode also permits a literal IPv4-mapped peer.
+            var client = new TcpClient(AddressFamily.InterNetworkV6);
+            try { client.Client.DualMode = true; return client; }
+            catch { client.Close(); throw; }
+        }
+        internal static TcpClient Connect(string host, int port, int timeoutMs, CancellationToken token)
+        { return Connect(host, port, timeoutMs, token, Dns.GetHostAddressesAsync); }
+
+        // The explicit resolver overload lets isolated fixtures release a late DNS
+        // result; production always uses the asynchronous Windows resolver above.
+        internal static TcpClient Connect(string host, int port, int timeoutMs, CancellationToken token,
+            Func<string, Task<IPAddress[]>> resolve)
+        {
+            token.ThrowIfCancellationRequested();
+            if (port < 1 || port > 65535) throw new ArgumentOutOfRangeException("port");
+            int budget = Math.Max(1, timeoutMs); var clock = Stopwatch.StartNew();
+            var gate = new object(); bool abandoned = false;
+            var owned = new List<TcpClient>(); var pending = new List<Task>();
+            var clients = new Dictionary<Task, TcpClient>();
+            using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+                deadline.CancelAfter(budget);
+                Action guard = delegate {
+                    token.ThrowIfCancellationRequested();
+                    if (abandoned || deadline.IsCancellationRequested || clock.ElapsedMilliseconds >= budget)
+                        throw new TimeoutException("SOCKS connection exceeded its deadline.");
+                };
+                using (deadline.Token.Register(delegate {
+                    lock (gate) { abandoned = true; foreach (var client in owned) client.Close(); }
+                })) {
+                    try {
+                        IPAddress literal; IPAddress[] addresses;
+                        if (IPAddress.TryParse(Host(host), out literal)) addresses = new[] { literal };
+                        else {
+                            guard(); var dns = resolve(Host(host)); ObserveConnectFault(dns);
+                            var resolved = Task.WhenAny(dns);
+                            try {
+                                if (!resolved.Wait((int)Math.Max(0, (long)budget - clock.ElapsedMilliseconds), deadline.Token))
+                                    throw new TimeoutException("SOCKS DNS exceeded its deadline.");
+                                addresses = dns.GetAwaiter().GetResult();
+                            } catch (OperationCanceledException) { guard(); throw; }
+                        }
+                        // Launch IPv4 first to retain the legacy preference, but do not
+                        // let a refused/silent address block the other family's attempt.
+                        var ordered = new List<IPAddress>();
+                        foreach (var address in addresses) if (address.AddressFamily == AddressFamily.InterNetwork) ordered.Add(address);
+                        foreach (var address in addresses) if (address.AddressFamily == AddressFamily.InterNetworkV6) ordered.Add(address);
+                        Exception failure = null;
+                        foreach (var address in ordered) {
+                            lock (gate) {
+                                guard(); TcpClient client = null;
+                                try {
+                                    client = CreateClient(address.ToString()); owned.Add(client); guard();
+                                    var connect = Task.Factory.FromAsync((callback, state) => client.BeginConnect(address, port, callback, state), client.EndConnect, null);
+                                    ObserveConnectFault(connect); pending.Add(connect); clients.Add(connect, client);
+                                } catch (Exception ex) { if (client != null) { client.Close(); owned.Remove(client); } failure = ex; }
+                            }
+                        }
+                        while (pending.Count != 0) {
+                            guard(); var first = Task.WhenAny(pending);
+                            try {
+                                if (!first.Wait((int)Math.Max(0, (long)budget - clock.ElapsedMilliseconds), deadline.Token))
+                                    throw new TimeoutException("SOCKS connection exceeded its deadline.");
+                            } catch (OperationCanceledException) { guard(); throw; }
+                            var completed = first.GetAwaiter().GetResult(); pending.Remove(completed);
+                            try { completed.GetAwaiter().GetResult(); }
+                            catch (Exception ex) { failure = ex; continue; }
+                            lock (gate) { guard(); var winner = clients[completed]; owned.Remove(winner); return winner; }
+                        }
+                        guard(); throw failure ?? new SocketException((int)SocketError.HostNotFound);
+                    } finally {
+                        lock (gate) { abandoned = true; foreach (var client in owned) client.Close(); owned.Clear(); }
+                    }
+                }
+            }
+        }
+        private static void ObserveConnectFault(Task task)
+        { task.ContinueWith(failed => { var ignored = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously); }
+    }
+
     internal static class ConnectionMetrics
     {
         private const string SpeedTestUrl = "https://speed.cloudflare.com/__down?bytes=10000000";
 
         public static int? MeasureSocksLatencyMs(AppSettings settings, int timeoutMs)
+        { return MeasureSocksLatencyMs(settings, timeoutMs, CancellationToken.None); }
+
+        internal static int? MeasureSocksLatencyMs(AppSettings settings, int timeoutMs, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
             if (settings == null) return null;
 
             Uri target;
@@ -277,22 +847,18 @@ namespace ProGo
                 ? (String.Equals(target.Scheme, "https", StringComparison.OrdinalIgnoreCase) ? 443 : 80)
                 : target.Port;
 
+            using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+            deadline.CancelAfter(Math.Max(1, timeoutMs));
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                using (var client = new TcpClient())
+                using (var client = SocksEndpoint.Connect(settings.SocksHost, settings.SocksPort, Math.Max(1, timeoutMs), deadline.Token))
+                using (deadline.Token.Register(delegate { client.Close(); }))
                 {
-                    var connect = client.BeginConnect(settings.SocksHost, settings.SocksPort, null, null);
-                    if (!connect.AsyncWaitHandle.WaitOne(Math.Max(1000, timeoutMs)))
-                    {
-                        return null;
-                    }
-
-                    client.EndConnect(connect);
                     using (var stream = client.GetStream())
                     {
-                        stream.ReadTimeout = Math.Max(1000, timeoutMs);
-                        stream.WriteTimeout = Math.Max(1000, timeoutMs);
+                        stream.ReadTimeout = Math.Max(1, timeoutMs);
+                        stream.WriteTimeout = Math.Max(1, timeoutMs);
 
                         var greeting = new byte[] { 0x05, 0x01, 0x00 };
                         stream.Write(greeting, 0, greeting.Length);
@@ -342,6 +908,8 @@ namespace ProGo
                         var remainder = new byte[addressBytes + 2];
                         if (!ReadExact(stream, remainder, 0, remainder.Length)) return null;
 
+                        token.ThrowIfCancellationRequested();
+                        if (deadline.IsCancellationRequested) return null;
                         stopwatch.Stop();
                         return (int)Math.Max(1, Math.Round(stopwatch.Elapsed.TotalMilliseconds));
                     }
@@ -349,73 +917,45 @@ namespace ProGo
             }
             catch
             {
-                return null;
+                token.ThrowIfCancellationRequested(); return null;
+            }
+            finally { token.ThrowIfCancellationRequested(); }
             }
         }
 
         public static double? MeasureDownloadMbps(AppSettings settings, out string error)
+        { return MeasureDownloadMbps(settings, CancellationToken.None, out error); }
+
+        internal static double? MeasureDownloadMbps(AppSettings settings, CancellationToken token, out string error,
+            Func<string, int, CancellationToken, DiagnosticProcessResult> run = null)
         {
-            error = null;
-            if (settings == null)
-            {
-                error = "Настройки недоступны.";
-                return null;
-            }
-
-            try
-            {
-                var testUrl = SpeedTestUrl + "&t=" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
-                var args =
-                    "--socks5-hostname \"" + settings.SocksHost + ":" + settings.SocksPort + "\" " +
-                    "-L -sS --connect-timeout 10 --max-time 35 -o NUL -w \"%{speed_download}\" \"" + testUrl + "\"";
-
-                var psi = new ProcessStartInfo("curl.exe", args)
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-
-                using (var process = Process.Start(psi))
-                {
-                    if (process == null)
-                    {
-                        error = "Не удалось запустить curl.exe.";
-                        return null;
-                    }
-
-                    var output = process.StandardOutput.ReadToEnd();
-                    var stderr = process.StandardError.ReadToEnd();
-                    if (!process.WaitForExit(40000))
-                    {
-                        try { process.Kill(); } catch { }
-                        error = "Тест скорости превысил лимит времени.";
-                        return null;
-                    }
-
-                    if (process.ExitCode != 0)
-                    {
-                        error = String.IsNullOrWhiteSpace(stderr) ? "curl завершился с ошибкой." : SafeLog.Redact(stderr.Trim());
-                        return null;
-                    }
-
-                    double bytesPerSecond;
-                    if (!Double.TryParse(output.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out bytesPerSecond) || bytesPerSecond <= 0)
-                    {
-                        error = "Не удалось разобрать результат теста скорости.";
-                        return null;
-                    }
-
-                    return bytesPerSecond * 8.0 / 1000000.0;
+            token.ThrowIfCancellationRequested(); error = null;
+            if (settings == null) { error = "Настройки недоступны."; return null; }
+            try {
+                var current = settings.Clone();
+                current.TestEndpoint = SpeedTestUrl + "&t=" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
+                var arguments = ConnectionHealthMonitor.InternetArguments(current, true);
+                if (run == null) run = RunCurl;
+                var captured = run(arguments, 40000, token);
+                token.ThrowIfCancellationRequested();
+                if (captured.ExitCode != 0 || captured.Truncated) {
+                    error = captured.Truncated ? "Вывод теста скорости превышает допустимый размер." :
+                        String.IsNullOrWhiteSpace(captured.Error) ? "curl завершился с ошибкой." : SafeLog.Redact((captured.Error ?? "").Trim());
+                    return null;
                 }
+                double bytesPerSecond;
+                if (!Double.TryParse(captured.Output.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out bytesPerSecond) ||
+                    Double.IsNaN(bytesPerSecond) || Double.IsInfinity(bytesPerSecond) || bytesPerSecond <= 0) {
+                    error = "Не удалось разобрать результат теста скорости."; return null;
+                }
+                return bytesPerSecond / 125000.0;
             }
-            catch (Exception ex)
-            {
-                error = SafeLog.Redact(ex.Message);
-                return null;
-            }
+            catch (OperationCanceledException) { throw; }
+            catch (TimeoutException) { error = "Тест скорости превысил лимит времени; его процессы остановлены."; return null; }
+            catch (Exception ex) { error = SafeLog.Redact(ex.Message); return null; }
         }
+        internal static DiagnosticProcessResult RunCurl(string arguments, int timeoutMs, CancellationToken token)
+        { return DiagnosticProcess.Run("curl.exe", arguments, timeoutMs, token); }
 
         private static bool ReadExact(NetworkStream stream, byte[] buffer, int offset, int count)
         {
@@ -433,38 +973,29 @@ namespace ProGo
     internal static class RouteTester
     {
         public static string Test(AppSettings settings, ProxyService proxy)
-        {
-            if (!proxy.IsListening())
-            {
-                return "SOCKS-порт не слушает. Сначала запустите SOCKS-туннель.";
-            }
+        { return Test(settings, proxy, CancellationToken.None); }
 
-            try
-            {
-                var psi = new ProcessStartInfo("curl.exe", "--socks5-hostname " + settings.SocksHost + ":" + settings.SocksPort + " -I -sS -m 15 " + settings.TestEndpoint)
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-                using (var process = Process.Start(psi))
-                {
-                    var output = process.StandardOutput.ReadToEnd();
-                    var error = process.StandardError.ReadToEnd();
-                    process.WaitForExit(20000);
-                    var text = output + Environment.NewLine + error;
-                    if (text.IndexOf(" 401", StringComparison.OrdinalIgnoreCase) >= 0) return "SOCKS-маршрут работает. Сервер ответил HTTP 401 без авторизации — это ожидаемый результат.";
-                    if (text.IndexOf(" 200", StringComparison.OrdinalIgnoreCase) >= 0) return "Соединение работает. HTTP 200.";
-                    if (text.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0 || text.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0) return "Тайм-аут соединения.";
-                    return "Маршрут проверен. Технический ответ: " + SafeLog.Redact(text.Trim());
-                }
+        internal static string Test(AppSettings settings, ProxyService proxy, CancellationToken token,
+            Func<string, int, CancellationToken, DiagnosticProcessResult> run = null)
+        {
+            token.ThrowIfCancellationRequested();
+            try {
+                // curl itself checks SOCKS; avoid adding a separate socket deadline first.
+                if (run == null) run = ConnectionMetrics.RunCurl;
+                var captured = run(ConnectionHealthMonitor.InternetArguments(settings), 10000, token);
+                token.ThrowIfCancellationRequested();
+                if (captured.Truncated) return "Не удалось проверить маршрут: ответ превышает допустимый размер.";
+                if (captured.ExitCode != 0) return "Не удалось проверить маршрут через SOCKS. " + SafeLog.Redact((captured.Error ?? "").Trim());
+                int status;
+                if (!Int32.TryParse(captured.Output.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out status) || status < 100 || status > 599)
+                    return "Не удалось разобрать ответ проверки маршрута.";
+                if (status == 401) return "SOCKS-маршрут работает. Сервер ответил HTTP 401 без авторизации — это ожидаемый результат.";
+                if (status == 200) return "Соединение работает. HTTP 200.";
+                return "SOCKS-маршрут работает. Сервер ответил HTTP " + status + ".";
             }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Route test failed.", ex);
-                return "Не удалось проверить маршрут через SOCKS.";
-            }
+            catch (OperationCanceledException) { throw; }
+            catch (TimeoutException) { return "Тайм-аут проверки маршрута; её процессы остановлены."; }
+            catch (Exception ex) { SafeLog.Error("Route test failed.", ex); return "Не удалось проверить маршрут через SOCKS."; }
         }
     }
 }

@@ -1,4 +1,7 @@
-﻿Set-StrictMode -Version 2.0
+﻿param([ValidateSet('All', 'Core', 'Installer')][string]$Suite = 'All',
+    [ValidateSet('All', 'Foundation', 'Live', 'Recovery', 'RecoveryInput')][string]$InstallerPartition = 'All')
+if ($Suite -ne 'Installer' -and $InstallerPartition -ne 'All') { throw 'Installer partition requires Installer suite.' }
+Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $PSScriptRoot
@@ -23,7 +26,7 @@ foreach ($pattern in $ForbiddenNames) {
     if ($items.Count -gt 0) { Fail "forbidden runtime/secret-like file found: $pattern" }
 }
 
-$TextFiles = @(Get-RepoFiles | Where-Object { $_.Extension -in @(".cs", ".ps1", ".md", ".yml", ".yaml", ".json") })
+$TextFiles = @(Get-RepoFiles | Where-Object { $_.Extension -in @(".c", ".h", ".cs", ".ps1", ".md", ".yml", ".yaml", ".json") })
 $LegacyParts = @(
     ("DM KZ Vault" + "Desk"),
     ("Dungeon" + "Masters"),
@@ -74,8 +77,10 @@ foreach ($requiredSource in @(
     "CheckSelectedProfile",
     "SshProfileDiagnostics.Check",
     "ssh.exe -G",
-    "LooksDirectTarget",
-    "FoundInConfig",
+    "SshResolved",
+    "CheckConfiguration",
+    "IdentityPaths",
+    "IdentityListLimited",
     "ResolvedIdentityFile",
     "ConnectionMetrics",
     "MeasureSocksLatencyMs",
@@ -117,16 +122,18 @@ if ($proxySetupText -match [regex]::Escape("HTTP_PROXY=socks5h://")) { Fail "pro
 
 $updateLauncherSource = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
 if ($updateLauncherSource -match 'TryDownloadUpdateScript|ExecutionPolicy Bypass|RawUpdateScriptUrl') { Fail "updater must use installed files and respect execution policy" }
-if ($updateLauncherSource -notmatch 'CreateNoWindow = false') { Fail "updater must show its progress console" }
-if ($updateLauncherSource -notmatch 'WaitForExit\(1200\)') { Fail "updater early-exit guard missing" }
+if ($updateLauncherSource -notmatch 'CreateNoWindow = true') { Fail "updater must use its native install window instead of a second console" }
+foreach ($required in @('MaintenanceOperation.StartOwnedHandoff', 'LaunchUpdater')) {
+    if ($updateLauncherSource -notmatch [regex]::Escape($required)) { Fail "updater owned handoff guard missing: $required" }
+}
 
 $buildScriptText = Get-Content -Encoding UTF8 -Raw -Path $Build
-foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
+foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if ($buildScriptText -notmatch [regex]::Escape($required)) { Fail "build script marker missing: $required" }
 }
 
 $installScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
-foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "New-ProGoShortcut", "bootstrap")) {
+foreach ($required in @('Copy-ProGoInstallerRuntime $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "Initialize-ProGoShortcuts", "bootstrap", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if (-not $installScriptText.Contains($required) -and $installScriptText -notmatch [regex]::Escape($required)) {
         Fail "installer marker missing: $required"
     }
@@ -199,14 +206,14 @@ if ($updateScriptText -match [regex]::Escape("raw.githubusercontent.com/rkhnorkh
 if ($updateScriptText -match [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main")) { Fail "updater core still uses main VERSION instead of published release" }
 
 $restoreScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
-foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
+foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "Scope", "ConfirmData", "RestoreNames", "Prepare", "Backup-BeforeRestore", "Commit-Restore", "Undo-Restore", "Test-RestoredApplication", "Start-ProGo", "progo-restore.log", "U8")) {
     if ($restoreScriptText -notmatch [regex]::Escape($required)) {
         Fail "restore script marker missing: $required"
     }
 }
 
 $repairScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Repair-ProGo.ps1")
-foreach ($required in @("ProGo.exe", "VERSION", "backups", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoLaunch")) {
+foreach ($required in @("ProGo.exe", "VERSION", "backups", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoLaunch", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if ($repairScriptText -notmatch [regex]::Escape($required)) { Fail "repair script marker missing: $required" }
 }
 
@@ -235,7 +242,7 @@ foreach ($required in @(
     if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Layout-ProGo.ps1", "Firewall-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
@@ -245,6 +252,21 @@ foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.
         Fail "PowerShell parser errors in $scriptName"
     }
     if ($tokens.Count -eq 0) { Fail "PowerShell parser returned no tokens for $scriptName" }
+    # Match Windows PowerShell's direct -File decoding, not only explicit UTF-8 text.
+    $fileTokens = $null; $fileErrors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$fileTokens, [ref]$fileErrors)
+    if (@($fileErrors).Count -gt 0) { Fail ("PowerShell file parser errors in " + $scriptName + ": " + (($fileErrors | ForEach-Object { $_.Message }) -join '; ')) }
+
+}
+
+# Parse every PowerShell test using the same file decoding as Windows PowerShell.
+# This must run before compilation and the long native suites.
+foreach ($testScript in @(Get-ChildItem -LiteralPath (Join-Path $Root 'tests') -Filter '*.ps1' -File)) {
+    $fileTokens = $null; $fileErrors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseFile($testScript.FullName, [ref]$fileTokens, [ref]$fileErrors)
+    if (@($fileErrors).Count -gt 0) {
+        Fail ("PowerShell file parser errors in tests/" + $testScript.Name + ": " + (($fileErrors | ForEach-Object { $_.Message }) -join '; '))
+    }
 }
 
 & $Build
@@ -255,10 +277,29 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
-foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
+if ($Suite -eq 'Installer') {
+    & (Join-Path $Root 'scripts\Test-ProGoInstallerSuite.ps1') -Partition $InstallerPartition
+    Write-Host ('ProGo Installer ' + $InstallerPartition + ' partition PASS.')
+    return
+}
+& (Join-Path $Root 'tests\RepairPayloadTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\RepairSplitTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\InstallerLifecycleTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\UninstallStageTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\PersonalInstallTransactionTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\NativeRegistrationTransactionTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\NativeBrokerLaunchTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\PersonalBrokerTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\RestoreSplitTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\InstallerStorageTests.ps1') -Scripts $PSScriptRoot
+
+foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Layout-ProGo.ps1", "Firewall-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
+$maintenanceSource = Join-Path $Root 'release\scripts\MaintenanceOperation.cs'
+if (-not (Test-Path $maintenanceSource)) { Fail 'maintenance runtime source missing' }
+if ((Get-FileHash $maintenanceSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\MaintenanceOperation.cs')).Hash) { Fail 'app and helper ownership protocol differ' }
 $runtimeBootstrap = Join-Path $Root "release\scripts\Install-FromGitHub.ps1"
 if (Test-Path $runtimeBootstrap) { Fail "bootstrap installer must not be included in runtime release scripts" }
 
@@ -277,16 +318,536 @@ foreach ($relativePath in @(
 
 $RecoveryHarness = Join-Path $Root "build\SocksRecoveryTests.exe"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
+# Capability only: no server/service is started or configured by this probe.
+$SshFixtureServer = Join-Path $env:WINDIR 'System32\OpenSSH\sshd.exe'
+Write-Host ('Native SSH fixture server available: ' + (Test-Path -LiteralPath $SshFixtureServer -PathType Leaf))
+$VaultReadHarness = Join-Path $Root 'build\VaultReadTests.exe'
+# Test-only paths/log guards keep this reader harness out of actual user data.
+& $Csc /nologo /target:exe /main:ProGo.VaultReadTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultReadHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'tests\VaultReadTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault read harness build failed' }
+$VaultReadInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultReadInfo.FileName = $VaultReadHarness
+$VaultReadInfo.UseShellExecute = $false
+$VaultReadProcess = [System.Diagnostics.Process]::Start($VaultReadInfo)
+try {
+    if (-not $VaultReadProcess.WaitForExit(90000)) {
+        $VaultReadProcess.Kill()
+        [void]$VaultReadProcess.WaitForExit(5000)
+        Fail 'Vault read harness exceeded its process deadline'
+    }
+    if ($VaultReadProcess.ExitCode -ne 0) { Fail 'Vault read tests failed' }
+} finally { $VaultReadProcess.Dispose() }
+$VaultDailyHarness = Join-Path $Root 'build\VaultDailyPolicyTests.exe'
+# Compile only the policy/reader and independent guards: no real paths, logging or UI.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyPolicyTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'tests\VaultDailyPolicyTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily policy harness build failed' }
+$VaultDailyInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyInfo.FileName = $VaultDailyHarness
+$VaultDailyInfo.UseShellExecute = $false
+$VaultDailyProcess = [System.Diagnostics.Process]::Start($VaultDailyInfo)
+try {
+    if (-not $VaultDailyProcess.WaitForExit(90000)) {
+        $VaultDailyProcess.Kill()
+        [void]$VaultDailyProcess.WaitForExit(5000)
+        Fail 'Vault daily policy harness exceeded its process deadline'
+    }
+    if ($VaultDailyProcess.ExitCode -ne 0) { Fail 'Vault daily policy tests failed' }
+} finally { $VaultDailyProcess.Dispose() }
+$VaultDailyRecordHarness = Join-Path $Root 'build\VaultDailyRecordTests.exe'
+# This guarded record harness uses only memory and native CurrentUser DPAPI.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyRecordTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyRecordHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'tests\VaultDailyRecordTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily record harness build failed' }
+$VaultDailyRecordInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyRecordInfo.FileName = $VaultDailyRecordHarness
+$VaultDailyRecordInfo.UseShellExecute = $false
+$VaultDailyRecordProcess = [System.Diagnostics.Process]::Start($VaultDailyRecordInfo)
+try {
+    if (-not $VaultDailyRecordProcess.WaitForExit(90000)) {
+        $VaultDailyRecordProcess.Kill()
+        [void]$VaultDailyRecordProcess.WaitForExit(5000)
+        Fail 'Vault daily record harness exceeded its process deadline'
+    }
+    if ($VaultDailyRecordProcess.ExitCode -ne 0) { Fail 'Vault daily record tests failed' }
+} finally { $VaultDailyRecordProcess.Dispose() }
+$VaultDailyFileHarness = Join-Path $Root 'build\VaultDailyFileTests.exe'
+# Daily-file fixtures use only owned temporary roots and independent path/log guards.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyFileTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyFileHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'src\VaultDailyFile.cs') (Join-Path $Root 'tests\VaultDailyFileTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily file harness build failed' }
+$VaultDailyFileInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyFileInfo.FileName = $VaultDailyFileHarness
+$VaultDailyFileInfo.UseShellExecute = $false
+$VaultDailyFileProcess = [System.Diagnostics.Process]::Start($VaultDailyFileInfo)
+try {
+    if (-not $VaultDailyFileProcess.WaitForExit(90000)) {
+        $VaultDailyFileProcess.Kill()
+        [void]$VaultDailyFileProcess.WaitForExit(5000)
+        Fail 'Vault daily file harness exceeded its process deadline'
+    }
+    if ($VaultDailyFileProcess.ExitCode -ne 0) { Fail 'Vault daily file tests failed' }
+} finally { $VaultDailyFileProcess.Dispose() }
+$VaultDailyJournalHarness = Join-Path $Root 'build\VaultDailyJournalTests.exe'
+# Isolated daily journal fixtures use synthetic data and owned temporary roots.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyJournalTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyJournalHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'src\VaultDailyFile.cs') (Join-Path $Root 'src\VaultDailyJournal.cs') (Join-Path $Root 'tests\VaultDailyJournalTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily journal harness build failed' }
+$VaultDailyJournalInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyJournalInfo.FileName = $VaultDailyJournalHarness
+$VaultDailyJournalInfo.UseShellExecute = $false
+$VaultDailyJournalProcess = [System.Diagnostics.Process]::Start($VaultDailyJournalInfo)
+try {
+    if (-not $VaultDailyJournalProcess.WaitForExit(90000)) {
+        $VaultDailyJournalProcess.Kill()
+        [void]$VaultDailyJournalProcess.WaitForExit(5000)
+        Fail 'Vault daily journal harness exceeded its process deadline'
+    }
+    if ($VaultDailyJournalProcess.ExitCode -ne 0) { Fail 'Vault daily journal tests failed' }
+} finally { $VaultDailyJournalProcess.Dispose() }
+$VaultDailyStoreHarness = Join-Path $Root 'build\VaultDailyStoreTests.exe'
+# The synchronous store is exercised only on synthetic roots, including native contention.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyStoreTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyStoreHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'src\VaultDailyFile.cs') (Join-Path $Root 'src\VaultDailyStore.cs') (Join-Path $Root 'src\VaultDailyJournal.cs') (Join-Path $Root 'tests\VaultDailyStoreTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily store harness build failed' }
+$VaultDailyStoreInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyStoreInfo.FileName = $VaultDailyStoreHarness
+$VaultDailyStoreInfo.UseShellExecute = $false
+$VaultDailyStoreProcess = [System.Diagnostics.Process]::Start($VaultDailyStoreInfo)
+try {
+    if (-not $VaultDailyStoreProcess.WaitForExit(90000)) {
+        $VaultDailyStoreProcess.Kill()
+        [void]$VaultDailyStoreProcess.WaitForExit(5000)
+        Fail 'Vault daily store harness exceeded its process deadline'
+    }
+    if ($VaultDailyStoreProcess.ExitCode -ne 0) { Fail 'Vault daily store tests failed' }
+} finally { $VaultDailyStoreProcess.Dispose() }
+$VaultDailyRecoveryHarness = Join-Path $Root 'build\VaultDailyRecoveryTests.exe'
+# Isolated daily recovery fixtures use synthetic data and owned temporary roots.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyRecoveryTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyRecoveryHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'src\VaultDailyFile.cs') (Join-Path $Root 'src\VaultDailyJournal.cs') (Join-Path $Root 'src\VaultDailyStore.cs') (Join-Path $Root 'src\VaultDailyRecovery.cs') (Join-Path $Root 'tests\VaultDailyRecoveryTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily recovery harness build failed' }
+$VaultDailyRecoveryInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyRecoveryInfo.FileName = $VaultDailyRecoveryHarness
+$VaultDailyRecoveryInfo.UseShellExecute = $false
+$VaultDailyRecoveryProcess = [System.Diagnostics.Process]::Start($VaultDailyRecoveryInfo)
+try {
+    if (-not $VaultDailyRecoveryProcess.WaitForExit(90000)) {
+        $VaultDailyRecoveryProcess.Kill()
+        [void]$VaultDailyRecoveryProcess.WaitForExit(5000)
+        Fail 'Vault daily recovery harness exceeded its process deadline'
+    }
+    if ($VaultDailyRecoveryProcess.ExitCode -ne 0) { Fail 'Vault daily recovery tests failed' }
+} finally { $VaultDailyRecoveryProcess.Dispose() }
+$VaultOpenHarness = Join-Path $Root 'build\VaultOpenServiceTests.exe'
+# Synthetic records and owned temporary roots only; guarded AppPaths and SafeLog.
+& $Csc /nologo /target:exe /main:ProGo.VaultOpenServiceTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultOpenHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'src\VaultDailyFile.cs') (Join-Path $Root 'src\VaultDailyJournal.cs') (Join-Path $Root 'src\VaultDailyStore.cs') (Join-Path $Root 'src\VaultDailyRecovery.cs') (Join-Path $Root 'src\VaultOpenService.cs') (Join-Path $Root 'src\VaultDailyExpiry.cs') (Join-Path $Root 'src\VaultFakeDataFactory.cs') (Join-Path $Root 'tests\VaultOpenServiceTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault open service harness build failed' }
+$VaultOpenInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultOpenInfo.FileName = $VaultOpenHarness
+$VaultOpenInfo.UseShellExecute = $false
+$VaultOpenProcess = [System.Diagnostics.Process]::Start($VaultOpenInfo)
+try {
+    if (-not $VaultOpenProcess.WaitForExit(90000)) {
+        $VaultOpenProcess.Kill()
+        [void]$VaultOpenProcess.WaitForExit(5000)
+        Fail 'Vault open service harness exceeded its process deadline'
+    }
+    if ($VaultOpenProcess.ExitCode -ne 0) { Fail 'Vault open service tests failed' }
+} finally { $VaultOpenProcess.Dispose() }
+
+$VaultLifetimeSources = @('Vault.cs', 'VaultDailyPolicy.cs', 'VaultDailyRecord.cs', 'VaultDailyFile.cs', 'VaultDailyJournal.cs', 'VaultDailyStore.cs', 'VaultDailyRecovery.cs', 'VaultDailyExpiry.cs', 'VaultOpenService.cs', 'VaultFakeDataFactory.cs') | ForEach-Object { Join-Path $Root ('src\' + $_) }
+foreach ($lifetimeTest in @('VaultDailyExpiryTests', 'VaultDailyRestartTests')) {
+    $lifetimeHarness = Join-Path $Root ('build\' + $lifetimeTest + '.exe')
+    & $Csc /nologo /target:exe ('/main:ProGo.' + $lifetimeTest) /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll ('/out:' + $lifetimeHarness) $VaultLifetimeSources (Join-Path $Root ('tests\' + $lifetimeTest + '.cs'))
+    if ($LASTEXITCODE -ne 0) { Fail ($lifetimeTest + ' harness build failed') }
+    $lifetimeInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $lifetimeInfo.FileName = $lifetimeHarness
+    $lifetimeInfo.UseShellExecute = $false
+    $lifetimeProcess = [System.Diagnostics.Process]::Start($lifetimeInfo)
+    try {
+        if (-not $lifetimeProcess.WaitForExit(600000)) {
+            $lifetimeProcess.Kill()
+            [void]$lifetimeProcess.WaitForExit(5000)
+            Fail ($lifetimeTest + ' harness exceeded its process deadline')
+        }
+        if ($lifetimeProcess.ExitCode -ne 0) { Fail ($lifetimeTest + ' failed') }
+    } finally { $lifetimeProcess.Dispose() }
+}
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\BoundedLog.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "src\ConnectionHealth.cs") (Join-Path $Root "src\DiagnosticProcess.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }
 
+$LogHarness = Join-Path $Root 'build\BoundedLogTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$LogHarness" (Join-Path $Root 'src\BoundedLog.cs') (Join-Path $Root 'tests\BoundedLogTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Bounded log harness build failed' }
+& $LogHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Bounded log tests failed' }
+$logSource = Join-Path $Root 'release\scripts\BoundedLog.cs'
+if (-not (Test-Path $logSource) -or (Get-FileHash $logSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\BoundedLog.cs')).Hash) { Fail 'app and helper log policies differ' }
+& (Join-Path $Root 'tests\BoundedLogTests.ps1') (Join-Path $Root 'release\scripts')
+
+$RescueHarness = Join-Path $Root 'build\RescueMeasurementTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$RescueHarness" (Join-Path $Root 'src\RescueMeasurement.cs') (Join-Path $Root 'tests\RescueMeasurementTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Rescue measurement harness build failed' }
+& $RescueHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Rescue measurement tests failed' }
+$rescueSource = Join-Path $Root 'release\scripts\RescueMeasurement.cs'
+if (-not (Test-Path $rescueSource) -or (Get-FileHash $rescueSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\RescueMeasurement.cs')).Hash) { Fail 'shipped Rescue measurement source differs' }
+& (Join-Path $Root 'tests\RescueMeasurementTests.ps1') (Join-Path $Root 'release\scripts')
+
+$shortcutSource = Join-Path $Root 'release\scripts\ApplicationShortcuts.cs'
+if ((Get-FileHash $shortcutSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\ApplicationShortcuts.cs')).Hash) { Fail 'app and installer shortcut implementations differ' }
+& (Join-Path $Root 'tests\HomeFirewallTests.ps1') (Join-Path $Root 'release\scripts')
+& (Join-Path $Root 'tests\ApplicationShortcutsTests.ps1') (Join-Path $Root 'release\scripts')
+
+$DiagnosticHarness = Join-Path $Root 'build\DiagnosticReportTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$DiagnosticHarness" (Join-Path $Root 'src\DiagnosticReport.cs') (Join-Path $Root 'tests\DiagnosticReportTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Diagnostic report harness build failed' }
+& $DiagnosticHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Diagnostic report tests failed' }
+foreach ($sourceName in @('DiagnosticReport.cs','DiagnosticPreview.cs','UiTheme.cs','BrandIcon.cs')) {
+    if ((Get-FileHash (Join-Path $Root ('src\' + $sourceName))).Hash -ne (Get-FileHash (Join-Path $Root ('release\scripts\' + $sourceName))).Hash) { Fail 'app and updater diagnostic implementations differ' }
+}
+& (Join-Path $Root 'tests\DiagnosticPreviewTests.ps1') (Join-Path $Root 'release\scripts')
+
+$RetentionHarness = Join-Path $Root 'build\BackupRetentionTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$RetentionHarness" (Join-Path $Root 'src\BackupRetention.cs') (Join-Path $Root 'tests\BackupRetentionTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Backup retention harness build failed' }
+& $RetentionHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Backup retention tests failed' }
+$retentionSource = Join-Path $Root 'release\scripts\BackupRetention.cs'
+if (-not (Test-Path $retentionSource) -or (Get-FileHash $retentionSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\BackupRetention.cs')).Hash) { Fail 'app and updater backup policies differ' }
+& (Join-Path $Root 'tests\BackupRetentionTests.ps1') (Join-Path $Root 'release\scripts')
+
+$integritySource = Join-Path $Root 'release\scripts\BackupIntegrity.cs'
+if (-not (Test-Path $integritySource) -or (Get-FileHash $integritySource).Hash -ne (Get-FileHash (Join-Path $Root 'src\BackupIntegrity.cs')).Hash) { Fail 'app and helpers backup integrity implementations differ' }
+$IntegrityHarness = Join-Path $Root 'build\BackupIntegrityTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$IntegrityHarness" (Join-Path $Root 'src\BackupIntegrity.cs') (Join-Path $Root 'tests\BackupIntegrityTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Backup integrity harness build failed' }
+& $IntegrityHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Backup integrity tests failed' }
+& (Join-Path $Root 'tests\BackupIntegrityTests.ps1') (Join-Path $Root 'release\scripts')
+
+# Exercise actual sockets and the installed Add-Type loader before the longer UI suite.
+$TransportSource = Join-Path $Root 'release\scripts\InstalledUpdateTransport.cs'
+if (-not (Test-Path $TransportSource) -or (Get-FileHash $TransportSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\InstalledUpdateTransport.cs')).Hash) { Fail 'installed update transport differs from source' }
+$TransportHarness = Join-Path $Root 'build\InstalledUpdateTransportTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$TransportHarness" $TransportSource (Join-Path $Root 'tests\InstalledUpdateTransportTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Installed update transport harness build failed' }
+& $TransportHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Installed update transport tests failed' }
+& (Join-Path $Root 'tests\InstalledUpdateTransportTests.ps1') (Join-Path $Root 'release\scripts')
+
+# Validate the changed helper transaction before the longer native UI suite.
+& (Join-Path $Root 'tests\UpdateProgressTests.ps1') $Exe (Join-Path $Root 'release\scripts')
+$WindowSource = Join-Path $Root 'release\scripts\UpdateInstallSession.cs'
+if (-not (Test-Path $WindowSource) -or (Get-FileHash $WindowSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\UpdateInstallSession.cs')).Hash) { Fail 'installed update window differs from source' }
+$WindowHarness = Join-Path $Root 'build\UpdateInstallWindowTests.exe'
+& $Csc /nologo /target:exe /main:ProGo.UpdateInstallWindowTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll "/out:$WindowHarness" (Join-Path $Root 'src\UpdateInstallSession.cs') (Join-Path $Root 'src\UiTheme.cs') (Join-Path $Root 'src\BrandIcon.cs') $TransportSource (Join-Path $Root 'tests\InstalledUpdateTransportTests.cs') (Join-Path $Root 'tests\UpdateInstallWindowTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Install window harness build failed' }
+& $WindowHarness (Join-Path $Root 'build\desktop-shots')
+if ($LASTEXITCODE -ne 0) { Fail 'Install window tests failed' }
 $DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
 $DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
-& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs')
+$UpdateCheckHarness = Join-Path $Root 'build\UpdateCheckTests.exe'
+& $Csc /nologo /target:exe /main:ProGo.UpdateCheckTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$UpdateCheckHarness" $DesktopSources (Join-Path $Root 'tests\UpdateCheckTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Update check harness build failed' }
+& $UpdateCheckHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Update check tests failed' }
+& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs') (Join-Path $Root 'tests\DesktopSettingsActionTests.cs') (Join-Path $Root 'tests\DesktopSettingsValidationTests.cs') (Join-Path $Root 'tests\DesktopDashboardLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsPagesLayoutTests.cs') (Join-Path $Root 'tests\DesktopContrastThemeTests.cs') (Join-Path $Root 'tests\DesktopSettingsAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopBackupAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopVaultAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopVaultUnlockTests.cs') (Join-Path $Root 'tests\DesktopVaultContextTests.cs') (Join-Path $Root 'tests\DesktopVaultAsyncSaveTests.cs') (Join-Path $Root 'tests\DesktopVaultDurableSaveTests.cs') (Join-Path $Root 'tests\DesktopVaultExpiryTests.cs') (Join-Path $Root 'tests\DesktopVaultDailyRuntimeTests.cs') (Join-Path $Root 'tests\DesktopWizardAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopProfileSharingAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopFriendsAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopHelpAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopUpdateTests.cs') (Join-Path $Root 'tests\DesktopUpdaterHandoffTests.cs') (Join-Path $Root 'tests\DesktopHealthTests.cs') (Join-Path $Root 'tests\DesktopStartupTests.cs') (Join-Path $Root 'tests\DesktopSshEditorTests.cs') (Join-Path $Root 'tests\DesktopSshDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopSshAgentServiceTests.cs') (Join-Path $Root 'tests\DesktopSshAgentProbeTests.cs') (Join-Path $Root 'tests\DesktopSshAgentStartTests.cs') (Join-Path $Root 'tests\DesktopSshAgentStartupTests.cs') (Join-Path $Root 'tests\DesktopSshAgentInventoryTests.cs') (Join-Path $Root 'tests\DesktopSshKeyMatchingTests.cs') (Join-Path $Root 'tests\DesktopSshKeyReadinessTests.cs') (Join-Path $Root 'tests\SshAuthenticationPreparationTests.cs') (Join-Path $Root 'tests\DesktopSshKeyReadinessUiTests.cs') (Join-Path $Root 'tests\DesktopSshAuthPolicyTests.cs') (Join-Path $Root 'tests\DesktopSshConfigTests.cs') (Join-Path $Root 'tests\DesktopRouteDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopWindowsRestoreTests.cs') (Join-Path $Root 'tests\DesktopIntegrationMutationTests.cs') (Join-Path $Root 'tests\DesktopTypedCorrectionRecoveryTests.cs') (Join-Path $Root 'tests\DesktopBackupRetentionTests.cs') (Join-Path $Root 'tests\DesktopBackupMetadataTests.cs') (Join-Path $Root 'tests\DesktopManualBackupTests.cs') (Join-Path $Root 'tests\DesktopStartupBackupTests.cs') (Join-Path $Root 'tests\DesktopStartupMigrationTests.cs') (Join-Path $Root 'tests\DesktopStartupBackupLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsPersistenceTests.cs') (Join-Path $Root 'tests\DesktopSettingsLoadFailureTests.cs') (Join-Path $Root 'tests\DesktopBridgeConsumerTests.cs') (Join-Path $Root 'tests\DesktopCodexShortcutOwnershipTests.cs') (Join-Path $Root 'tests\DesktopDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopAsyncDiagnosticPreviewTests.cs') (Join-Path $Root 'tests\DesktopProfileNativeChooserTests.cs') (Join-Path $Root 'tests\DesktopDiagnosticContextTests.cs') (Join-Path $Root 'tests\DesktopPhoneStopTests.cs') (Join-Path $Root 'tests\DesktopStartupPreferenceTests.cs') (Join-Path $Root 'tests\DesktopStartupSnapshotAsyncTests.cs') (Join-Path $Root 'tests\DesktopSettingsFolderTests.cs') (Join-Path $Root 'tests\DesktopTrayPreferenceAsyncTests.cs') (Join-Path $Root 'tests\DesktopVisualPolishTests.cs') (Join-Path $Root 'tests\DesktopAsyncSettingsTests.cs') (Join-Path $Root 'tests\DesktopAsyncRestoreTests.cs') (Join-Path $Root 'tests\DesktopAsyncCleanupTests.cs') (Join-Path $Root 'tests\DesktopAsyncUpdaterTests.cs') (Join-Path $Root 'tests\DesktopSshInteractiveKeyAddTests.cs')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
-& $DesktopHarness (Join-Path $Root 'build\desktop-shots')
-if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
-& (Join-Path $Root 'tests\UpdatePackageTests.ps1')
-Write-Host "ProGo tests PASS."
+# Test-only loopback server dependencies never enter release or system Python.
+$FixtureDeps = Join-Path $Root 'build\ssh-fixture-deps'
+$FixturePythonCommand = Get-Command python -ErrorAction Stop
+$FixturePython = $FixturePythonCommand.Source
+$FixtureRequirements = Join-Path $Root 'tests\ssh-fixture-requirements.txt'
+# Only fixed booleans/counts leave the exit0 startup diagnostic. CPython verbose
+# output can contain local paths; never print or persist that raw trace.
+function Get-IsolatedSshFixtureStartupFacts($OutputText, $ErrorText) {
+    return ('bodyEntered=' + $OutputText.Contains('PROGO_FIXTURE_EXIT0_ENTERED') +
+        '; stdoutChars=' + $OutputText.Length + '; stderrChars=' + $ErrorText.Length +
+        '; importBootstrap=' + [bool]($ErrorText -match "(?m)^import '_frozen_importlib_external'") +
+        '; encodingsReady=' + [bool]($ErrorText -match "(?m)^import 'encodings'") +
+        '; osReady=' + [bool]($ErrorText -match "(?m)^import 'os'") +
+        '; siteReady=' + [bool]($ErrorText -match "(?m)^import 'site'") +
+        '; pthVisits=' + [regex]::Matches($ErrorText, '(?m)^Processing .pth file:').Count +
+        '; startupBanner=' + [bool]($ErrorText -match '(?m)^Python [0-9]+\.[0-9]+\.') +
+        '; cleanupEntered=' + [bool]($ErrorText -match '(?m)^# (clear |cleanup\[)') +
+        '; tracebackPresent=' + $ErrorText.Contains('Traceback (most recent call last):'))
+}
+# Redaction regression uses synthetic text only; no process or host path inspection.
+$StartupFactsProbe = Get-IsolatedSshFixtureStartupFacts 'PROGO_FIXTURE_EXIT0_ENTERED' "import 'encodings'`nimport 'site'`nProcessing .pth file: PRIVATE_DIAGNOSTIC_SENTINEL`n"
+if ($StartupFactsProbe.Contains('PRIVATE_DIAGNOSTIC_SENTINEL') -or
+    -not $StartupFactsProbe.Contains('bodyEntered=True') -or
+    -not $StartupFactsProbe.Contains('encodingsReady=True') -or
+    -not $StartupFactsProbe.Contains('siteReady=True') -or
+    -not $StartupFactsProbe.Contains('pthVisits=1')) { Fail 'SSH fixture startup diagnostic failed its redaction/phase contract' }
+$StartupFactsEmpty = Get-IsolatedSshFixtureStartupFacts '' ''
+if (-not $StartupFactsEmpty.Contains('bodyEntered=False') -or
+    -not $StartupFactsEmpty.Contains('stderrChars=0') -or
+    -not $StartupFactsEmpty.Contains('siteReady=False')) { Fail 'SSH fixture startup diagnostic mislabeled an empty trace' }
+Write-Host 'SSH fixture startup facts synthetic/redaction tests PASS: 2'
+# Read-only deadline snapshot of this owned child only. No raw module paths,
+# command lines, environment values, thread IDs or native error messages escape.
+function Get-IsolatedSshFixtureLoaderFacts($OwnedProcess, $ExpectedExecutable) {
+    $mainMatches = $false; $mainRead = $false; $moduleRead = $false
+    $pythonLoaded = $false; $runtimeLoaded = $false; $moduleCount = 0; $moduleCapped = $false
+    $mainError = $false; $moduleError = $false
+    try {
+        $mainMatches = [string]::Equals($OwnedProcess.MainModule.FileName, $ExpectedExecutable, [StringComparison]::OrdinalIgnoreCase)
+        $mainRead = $true
+    } catch { $mainError = $true }
+    try {
+        foreach ($module in $OwnedProcess.Modules) {
+            if ($moduleCount -ge 128) { $moduleCapped = $true; break }
+            $moduleCount++
+            if ($module.ModuleName -match '^python[0-9]+(?:_d)?\.dll$') { $pythonLoaded = $true }
+            if ($module.ModuleName -match '^(?:vcruntime[0-9_]+|ucrtbase)\.dll$') { $runtimeLoaded = $true }
+        }
+        $moduleRead = $true
+    } catch { $moduleError = $true }
+    return ('mainRead=' + $mainRead + '; mainMatchesSelected=' + $mainMatches +
+        '; mainProbeError=' + $mainError + '; modulesRead=' + $moduleRead +
+        '; modulesProbeError=' + $moduleError + '; moduleCount=' + $moduleCount +
+        '; moduleCountCapped=' + $moduleCapped + '; pythonDllLoaded=' + $pythonLoaded +
+        '; cRuntimeLoaded=' + $runtimeLoaded)
+}
+# Synthetic redaction/role regression; no extra interpreter or host settings used.
+$LoaderSynthetic = [pscustomobject]@{
+    MainModule = [pscustomobject]@{ FileName = 'PRIVATE_LOADER_SENTINEL' }
+    Modules = @([pscustomobject]@{ ModuleName = 'python312.dll' },
+        [pscustomobject]@{ ModuleName = 'ucrtbase.dll' },
+        [pscustomobject]@{ ModuleName = 'PRIVATE_LOADER_SENTINEL' })
+}
+$LoaderProbe = Get-IsolatedSshFixtureLoaderFacts $LoaderSynthetic 'PRIVATE_LOADER_SENTINEL'
+if ($LoaderProbe.Contains('PRIVATE_LOADER_SENTINEL') -or -not $LoaderProbe.Contains('mainMatchesSelected=True') -or
+    -not $LoaderProbe.Contains('moduleCount=3;') -or -not $LoaderProbe.Contains('pythonDllLoaded=True') -or
+    -not $LoaderProbe.Contains('cRuntimeLoaded=True')) { Fail 'SSH fixture loader diagnostic redaction/role regression' }
+$LoaderEmpty = Get-IsolatedSshFixtureLoaderFacts ([pscustomobject]@{ MainModule = [pscustomobject]@{ FileName = 'other' }; Modules = @() }) 'expected'
+if (-not $LoaderEmpty.Contains('mainMatchesSelected=False') -or -not $LoaderEmpty.Contains('pythonDllLoaded=False') -or
+    -not $LoaderEmpty.Contains('moduleCount=0;')) { Fail 'SSH fixture loader diagnostic empty regression' }
+Write-Host 'SSH fixture loader facts synthetic/redaction tests PASS: 2'
+# Deadline-only discriminator: owned child thread state/wait-role counts, never IDs or native stacks.
+function Get-IsolatedSshFixtureThreadFacts($OwnedProcess) {
+    $count = 0; $capped = $false; $read = $false; $collectionErrors = 0; $threadErrors = 0; $waitErrors = 0
+    $running = 0; $ready = 0; $waiting = 0; $otherState = 0
+    $executive = 0; $userRequest = 0; $suspended = 0; $delay = 0; $page = 0; $otherWait = 0
+    try {
+        # Invoke get_Value as a METHOD: ordinary property syntax masks getter exceptions as null.
+        foreach ($thread in $OwnedProcess.PSObject.Properties['Threads'].get_Value()) {
+            if ($count -ge 32) { $capped = $true; break }
+            $count++
+            try {
+                $state = [string]$thread.PSObject.Properties['ThreadState'].get_Value()
+                switch ($state) {
+                    'Running' { $running++ }
+                    'Ready' { $ready++ }
+                    'Wait' {
+                        $waiting++
+                        try {
+                            switch ([string]$thread.PSObject.Properties['WaitReason'].get_Value()) {
+                                'Executive' { $executive++ }
+                                'UserRequest' { $userRequest++ }
+                                'Suspended' { $suspended++ }
+                                'ExecutionDelay' { $delay++ }
+                                { $_ -in @('FreePage','PageIn','VirtualMemory') } { $page++ }
+                                default { $otherWait++ }
+                            }
+                        } catch { $waitErrors++ }
+                    }
+                    default { $otherState++ }
+                }
+            } catch { $threadErrors++ }
+            finally { if ($thread -is [Diagnostics.ProcessThread]) { $thread.Dispose() } }
+        }
+        $read = $true
+    } catch { $collectionErrors++ }
+    return ('threadsRead=' + $read + '; threadCount=' + $count + '; threadsCapped=' + $capped +
+        '; collectionProbeErrors=' + $collectionErrors + '; threadProbeErrors=' + $threadErrors +
+        '; running=' + $running + '; ready=' + $ready + '; waiting=' + $waiting + '; otherState=' + $otherState +
+        '; waitExecutive=' + $executive + '; waitUserRequest=' + $userRequest + '; waitSuspended=' + $suspended +
+        '; waitDelay=' + $delay + '; waitPage=' + $page + '; waitOther=' + $otherWait + '; waitProbeErrors=' + $waitErrors)
+}
+# Synthetic role/redaction, empty, cap and failed-probe vectors: no child, host settings or secret data.
+$ThreadFactsProbe = Get-IsolatedSshFixtureThreadFacts ([pscustomobject]@{ Threads = @(
+    [pscustomobject]@{ ThreadState = 'Wait'; WaitReason = 'Executive' },
+    [pscustomobject]@{ ThreadState = 'Wait'; WaitReason = 'UserRequest' },
+    [pscustomobject]@{ ThreadState = 'Ready' },
+    [pscustomobject]@{ ThreadState = 'PRIVATE_THREAD_SENTINEL' }) })
+if ($ThreadFactsProbe.Contains('PRIVATE_THREAD_SENTINEL') -or -not $ThreadFactsProbe.Contains('threadCount=4;') -or
+    -not $ThreadFactsProbe.Contains('waiting=2;') -or -not $ThreadFactsProbe.Contains('ready=1;') -or
+    -not $ThreadFactsProbe.Contains('waitExecutive=1;') -or -not $ThreadFactsProbe.Contains('waitUserRequest=1;') -or
+    -not $ThreadFactsProbe.Contains('otherState=1;')) { Fail 'SSH fixture thread diagnostic role/redaction regression' }
+$ThreadFactsEmpty = Get-IsolatedSshFixtureThreadFacts ([pscustomobject]@{ Threads = @() })
+if (-not $ThreadFactsEmpty.Contains('threadsRead=True; threadCount=0;') -or
+    -not $ThreadFactsEmpty.Contains('threadsCapped=False;')) { Fail 'SSH fixture thread diagnostic empty regression' }
+$ThreadFactsCap = Get-IsolatedSshFixtureThreadFacts ([pscustomobject]@{ Threads = @(1..40 | ForEach-Object { [pscustomobject]@{ ThreadState = 'Running' } }) })
+if (-not $ThreadFactsCap.Contains('threadCount=32; threadsCapped=True;') -or
+    -not $ThreadFactsCap.Contains('running=32;')) { Fail 'SSH fixture thread diagnostic cap regression' }
+$ThreadFactsFailure = [pscustomobject]@{ MissingThreads = 'PRIVATE_THREAD_SENTINEL' } # StrictMode refuses absent Threads
+$ThreadFactsFailed = Get-IsolatedSshFixtureThreadFacts $ThreadFactsFailure
+if ($ThreadFactsFailed.Contains('PRIVATE_THREAD_SENTINEL') -or -not $ThreadFactsFailed.Contains('threadsRead=False;') -or
+    -not $ThreadFactsFailed.Contains('collectionProbeErrors=1;')) { Fail 'SSH fixture thread diagnostic failed-probe regression' }
+Write-Host 'SSH fixture thread facts synthetic/redaction tests PASS: 4'
+& (Join-Path $Root 'tests\TestSshFixtureThreadFacts.ps1')
+function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
+    $FixtureOut = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stdout.txt')
+    $FixtureError = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stderr.txt')
+    # Own the native handle directly: Start-Process -PassThru with redirected
+    # streams can expose a null ExitCode after WaitForExit on Windows PowerShell.
+    $FixtureTool = New-Object System.Diagnostics.Process
+    $FixtureTool.StartInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $FixtureTool.StartInfo.FileName = $FixturePython
+    $FixtureTool.StartInfo.Arguments = ($ToolArguments -join ' ')
+    $FixtureTool.StartInfo.UseShellExecute = $false
+    $FixtureTool.StartInfo.CreateNoWindow = $true
+    $FixtureTool.StartInfo.RedirectStandardOutput = $true
+    $FixtureTool.StartInfo.RedirectStandardError = $true
+    $FixtureTool.StartInfo.RedirectStandardInput = $true
+    # Test-only tracing for this one child, preserving argv, body, stdin policy and
+    # normal site initialization. No -S/-I/-E flags or global environment changes.
+    $FixtureStartupDiagnostic = ($Label -eq 'exit0-regression')
+    if ($FixtureStartupDiagnostic) { $FixtureTool.StartInfo.EnvironmentVariables['PYTHONVERBOSE'] = '1' }
+    if ($FixtureStartupDiagnostic) {
+        # Presence only: do not print environment values or read site/config contents.
+        Write-Host ('SSH_FIXTURE_SELECTION applicationCommand=' + ($FixturePythonCommand.CommandType -eq 'Application') +
+            '; executableExists=' + [IO.File]::Exists($FixturePython) +
+            '; executableNamedPython=' + ([IO.Path]::GetFileName($FixturePython) -ieq 'python.exe') +
+            '; pythonHomePresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONHOME') +
+            '; pythonPathPresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONPATH') +
+            '; pythonStartupPresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONSTARTUP') +
+            '; pythonUserBasePresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONUSERBASE') +
+            '; noUserSitePresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONNOUSERSITE') +
+            '; stack=Invoke-IsolatedSshFixtureTool>selection')
+    }
+    $FixtureInputClosed = $false
+    $FixtureDeadlineExceeded = $false
+    $FixtureStarted = $false
+    $FixtureOutRead = $null
+    $FixtureErrorRead = $null
+    $FixtureLaunchWatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $FixturePythonClass = if ($FixturePython -match '\\WindowsApps\\') { 'WindowsApps' } elseif ($FixturePython -match 'hostedtoolcache') { 'hostedtoolcache' } else { 'other' }
+    try {
+        if (-not $FixtureTool.Start()) { Fail ('Owned SSH fixture ' + $Label + ' did not start') }
+        $FixtureStarted = $true
+        # These fixture tools are noninteractive. Own and close their input;
+        # never inherit a CI host pipe with another outstanding reader.
+        $FixtureTool.StandardInput.Close()
+        $FixtureInputClosed = $true
+        Write-Host ('SSH_FIXTURE_STARTED label=' + $Label + '; pid=' + $FixtureTool.Id + '; startMs=' + $FixtureLaunchWatch.ElapsedMilliseconds + '; pythonClass=' + $FixturePythonClass)
+        $FixtureOutRead = $FixtureTool.StandardOutput.ReadToEndAsync()
+        $FixtureErrorRead = $FixtureTool.StandardError.ReadToEndAsync()
+        if ($FixtureStartupDiagnostic) {
+            Write-Host ('SSH_FIXTURE_INPUT label=exit0-regression; stdinClosed=' + $FixtureInputClosed +
+                '; argc=' + $ToolArguments.Count + '; commandOptionC=' + ($ToolArguments[0] -ceq '-c') +
+                '; shellDisabled=' + (-not $FixtureTool.StartInfo.UseShellExecute) +
+                '; inputRedirected=' + $FixtureTool.StartInfo.RedirectStandardInput +
+                '; verboseChildOnly=True; lifecycle=owned-started; stack=Invoke-IsolatedSshFixtureTool>exit0-regression')
+        }
+        if (-not $FixtureTool.WaitForExit($BudgetMs)) {
+            $FixtureDeadlineExceeded = $true
+            # Safe owned-process facts only; never print arguments/environment
+            # or turn a process that exits at the deadline into a successful test.
+            $FixtureCpuMs = 'unavailable'; $FixtureRamBytes = 'unavailable'; $FixtureProbeError = 'none'
+            try { $FixtureCpuMs = $FixtureTool.TotalProcessorTime.TotalMilliseconds; $FixtureRamBytes = $FixtureTool.WorkingSet64 }
+            catch { $FixtureProbeError = $_.Exception.GetType().Name }
+            Write-Host ('SSH_FIXTURE_DEADLINE label=' + $Label + '; elapsedMs=' + $FixtureLaunchWatch.ElapsedMilliseconds + '; exited=' + $FixtureTool.HasExited + '; stdoutTask=' + $FixtureOutRead.Status + '; stderrTask=' + $FixtureErrorRead.Status + '; cpuMs=' + $FixtureCpuMs + '; ramBytes=' + $FixtureRamBytes + '; probeErrorType=' + $FixtureProbeError)
+            if ($FixtureStartupDiagnostic) {
+                $FixtureLoaderFacts = Get-IsolatedSshFixtureLoaderFacts $FixtureTool $FixturePython
+                Write-Host ('SSH_FIXTURE_LOADER label=exit0-regression; phase=deadline-before-owned-kill; ' +
+                    $FixtureLoaderFacts + '; stack=Invoke-IsolatedSshFixtureTool>deadline')
+                $FixtureThreadFacts = Get-IsolatedSshFixtureThreadFacts $FixtureTool
+                Write-Host ('SSH_FIXTURE_THREADS label=exit0-regression; phase=deadline-before-owned-kill; ' +
+                    $FixtureThreadFacts + '; stack=Invoke-IsolatedSshFixtureTool>deadline>owned-thread-snapshot')
+            }
+            if (-not $FixtureTool.HasExited) {
+                try { $FixtureTool.Kill() } catch { if (-not $FixtureTool.HasExited) { throw } }
+            }
+            if (-not $FixtureTool.WaitForExit(5000)) { Fail ('Owned SSH fixture ' + $Label + ' did not terminate after its deadline') }
+            Fail ('Owned SSH fixture ' + $Label + ' exceeded ' + $BudgetMs + ' ms; native validation NOT_RUN')
+        }
+        $FixtureExitCode = $FixtureTool.ExitCode
+        if ($null -eq $FixtureExitCode) { Fail ('Owned SSH fixture ' + $Label + ' did not expose an exit code') }
+        if ($FixtureExitCode -ne 0) { Fail ('Owned SSH fixture ' + $Label + ' failed with exit code ' + $FixtureExitCode) }
+    } finally {
+        try {
+            if ($FixtureStarted -and -not $FixtureTool.HasExited) {
+                $FixtureTool.Kill()
+                if (-not $FixtureTool.WaitForExit(5000)) { Fail ('Owned SSH fixture ' + $Label + ' cleanup did not settle') }
+            }
+            # unittest stderr is log text, never the success criterion. Read both
+            # streams concurrently and retain actual nonzero/timeout failures.
+            if ($null -ne $FixtureOutRead) {
+                if (-not $FixtureOutRead.Wait(3000)) { Fail ('Owned SSH fixture ' + $Label + ' stdout did not settle') }
+                if (-not $FixtureStartupDiagnostic) {
+                    [System.IO.File]::WriteAllText($FixtureOut, $FixtureOutRead.Result)
+                    Write-Host $FixtureOutRead.Result
+                }
+            }
+            if ($null -ne $FixtureErrorRead) {
+                if (-not $FixtureErrorRead.Wait(3000)) { Fail ('Owned SSH fixture ' + $Label + ' stderr did not settle') }
+                if ($FixtureStartupDiagnostic) {
+                    $FixtureSafeFacts = Get-IsolatedSshFixtureStartupFacts $FixtureOutRead.Result $FixtureErrorRead.Result
+                    Write-Host ('SSH_FIXTURE_STARTUP label=exit0-regression; deadlineExceeded=' + $FixtureDeadlineExceeded +
+                        '; stdinClosed=' + $FixtureInputClosed + '; cleanupExited=' + $FixtureTool.HasExited +
+                        '; stdoutTask=' + $FixtureOutRead.Status + '; stderrTask=' + $FixtureErrorRead.Status +
+                        '; ' + $FixtureSafeFacts + '; stack=Invoke-IsolatedSshFixtureTool>exit0-regression')
+                    [System.IO.File]::WriteAllText($FixtureOut, $FixtureSafeFacts)
+                    [System.IO.File]::WriteAllText($FixtureError, $FixtureSafeFacts)
+                } else {
+                    [System.IO.File]::WriteAllText($FixtureError, $FixtureErrorRead.Result)
+                    Write-Host $FixtureErrorRead.Result
+                }
+            }
+        } finally { $FixtureTool.Dispose() }
+    }
+    if ($Label -eq 'exit0-regression' -and -not $FixtureOutRead.Result.Contains('PROGO_FIXTURE_EXIT0_ENTERED')) {
+        Fail 'Owned SSH fixture exit0-regression returned zero without executing its Python body'
+    }
+    if ($Label -eq 'stdin-eof-regression' -and -not $FixtureOutRead.Result.Contains('PROGO_FIXTURE_STDIN_EOF')) {
+        Fail 'Owned SSH fixture stdin-eof-regression returned zero without confirming its owned input EOF'
+    }
+}
+# Regression vectors use only this test's own Python processes. Expected
+# negative cases must throw the precise reason; no timeout becomes success.
+Invoke-IsolatedSshFixtureTool @('-c', '"import sys; print(''PROGO_FIXTURE_EXIT0_ENTERED'', flush=True); sys.exit(0)"') 'exit0-regression' 5000
+# .NET Framework creates its input writer with Console.InputEncoding and
+# AutoFlush: its declared preamble is transport output even without our text.
+# Require exact preamble + EOF; any other bytes still fail with exit42.
+$FixtureInputPreambleHex = [System.BitConverter]::ToString([Console]::InputEncoding.GetPreamble()).Replace('-', '')
+Invoke-IsolatedSshFixtureTool @('-c', '"import sys; data=sys.stdin.buffer.read(); expected=bytes.fromhex(sys.argv[1]); print(''PROGO_FIXTURE_STDIN_EOF bytes='' + str(len(data)) + '' expected='' + str(len(expected)) + '' match='' + str(data == expected), flush=True); sys.exit(0 if data == expected else 42)"', ('"' + $FixtureInputPreambleHex + '"')) 'stdin-eof-regression' 5000
+$FixtureNonzeroObserved = $false
+try { Invoke-IsolatedSshFixtureTool @('-c', '"import sys; sys.exit(17)"') 'exit17-regression' 5000 }
+catch { if ($_.Exception.Message -notlike '*exit17-regression failed with exit code 17') { throw }; $FixtureNonzeroObserved = $true }
+if (-not $FixtureNonzeroObserved) { Fail 'Fixture launcher accepted a nonzero native exit code' }
+$FixtureTimeoutObserved = $false
+try { Invoke-IsolatedSshFixtureTool @('-c', '"import time; time.sleep(5)"') 'timeout-regression' 200 }
+catch { if ($_.Exception.Message -notlike '*timeout-regression exceeded 200 ms; native validation NOT_RUN') { throw }; $FixtureTimeoutObserved = $true }
+if (-not $FixtureTimeoutObserved) { Fail 'Fixture launcher accepted a timed-out native process' }
+Write-Host 'SSH fixture launcher exit0/exit17/owned-timeout/owned-stdin-EOF regression PASS'
+Invoke-IsolatedSshFixtureTool @('-m', 'pip', 'install', '--quiet', '--target', ('"' + $FixtureDeps + '"'), '--only-binary=:all:', '--disable-pip-version-check', '--retries', '0', '--timeout', '10', '-r', ('"' + $FixtureRequirements + '"')) 'install' 60000
+$OldFixturePythonPath = $env:PYTHONPATH
+$OldFixturePython = $env:PROGO_TEST_SSH_PYTHON
+$OldFixtureScript = $env:PROGO_TEST_SSH_FIXTURE_SCRIPT
+try {
+    $env:PYTHONPATH = $FixtureDeps
+    $env:PROGO_TEST_SSH_PYTHON = $FixturePython
+    $env:PROGO_TEST_SSH_FIXTURE_SCRIPT = Join-Path $Root 'tests\ssh_loopback_fixture.py'
+    Invoke-IsolatedSshFixtureTool @('-m', 'unittest', 'discover', '-s', ('"' + (Join-Path $Root 'tests') + '"'), '-p', 'ssh_loopback_fixture_tests.py', '-v') 'contract' 90000
+    & $DesktopHarness (Join-Path $Root 'build\desktop-shots')
+    if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
+} finally {
+    $env:PYTHONPATH = $OldFixturePythonPath
+    $env:PROGO_TEST_SSH_PYTHON = $OldFixturePython
+    $env:PROGO_TEST_SSH_FIXTURE_SCRIPT = $OldFixtureScript
+}
+$InstanceHarness = Join-Path $Root 'build\InstanceTests.exe'
+& $Csc /nologo /target:exe /main:ProGo.InstanceTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$InstanceHarness" $DesktopSources (Join-Path $Root 'tests\InstanceTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Instance harness build failed' }
+& $InstanceHarness $Exe $PSScriptRoot
+if ($LASTEXITCODE -ne 0) { Fail 'Instance tests failed' }
+& (Join-Path $Root 'tests\MaintenanceTests.ps1') $Exe (Join-Path $Root 'release\scripts')
+& (Join-Path $Root 'tests\OldBackupCompatibilityTests.ps1') $Exe (Join-Path $Root 'release\scripts')
+$ShutdownHarness = Join-Path $Root 'build\ShutdownTests.exe'
+& $Csc /nologo /target:exe /main:ProGo.ShutdownTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$ShutdownHarness" $DesktopSources (Join-Path $Root 'tests\ShutdownTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Shutdown harness build failed' }
+& $ShutdownHarness $Exe (Join-Path $Root 'release\scripts')
+if ($LASTEXITCODE -ne 0) { Fail 'Shutdown tests failed' }
+if ($Suite -eq 'All') { & (Join-Path $Root 'scripts\Test-ProGoInstallerSuite.ps1') }
+if ($Suite -eq 'All') { Write-Host 'ProGo tests PASS.' } else { Write-Host 'ProGo Core partition PASS; installer requires independent aggregate success.' }

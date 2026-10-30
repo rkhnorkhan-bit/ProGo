@@ -185,18 +185,30 @@ class WindowsTransportTests(RelayFixture):
             self.socks_tasks.discard(task)
 
     async def asyncTearDown(self):
-        if self.process.returncode is None:
-            self.process.stdin.write(b"quit\n")
-            await self.process.stdin.drain()
-        self.assertEqual(await asyncio.wait_for(self.process.wait(), 5), 0)
-        self.assertEqual(await self.process.stderr.read(), b"")
-        self.socks.close()
-        await self.socks.wait_closed()
-        tasks = list(self.socks_tasks)
-        for task in tasks:
-            task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
-        await super().asyncTearDown()
+        try:
+            if self.process.returncode is None:
+                self.process.stdin.write(b"quit\n")
+                await asyncio.wait_for(self.process.stdin.drain(), 1)
+            self.assertEqual(await asyncio.wait_for(self.process.wait(), 5), 0)
+            self.assertEqual(await asyncio.wait_for(self.process.stderr.read(), 1), b"")
+        finally:
+            try:
+                # This exact subprocess belongs to this fixture. A failed wait
+                # remains a failure, even if forced cleanup subsequently works.
+                if self.process.returncode is None:
+                    with contextlib.suppress(ProcessLookupError):
+                        self.process.kill()
+                    await asyncio.wait_for(self.process.wait(), 3)
+            finally:
+                self.socks.close()
+                await self.socks.wait_closed()
+                tasks = list(self.socks_tasks)
+                for task in tasks:
+                    task.cancel()
+                try:
+                    await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), 3)
+                finally:
+                    await super().asyncTearDown()
 
     async def test_frontend_routes_both_ports_via_socks_and_isolates_clients(self):
         loop = asyncio.get_running_loop()
@@ -218,12 +230,16 @@ class WindowsTransportTests(RelayFixture):
                 result, _ = await asyncio.wait_for(loop.sock_recvfrom(peers[0], 65535), 5)
                 self.assertEqual(result, packet)
             self.assertEqual(self.socks_connections, 5)  # probe + four independent flows
-            self.process.stdin.write(b"stop\n")
+            self.process.stdin.write(b"stop-owned\n")
             await self.process.stdin.drain()
-            await asyncio.wait_for(self.process.stdout.readline(), 3)
-            # Stop releases the UDP ports immediately, even with active streams.
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as check:
-                check.bind(("127.0.0.1", self.ike_port))
+            self.assertEqual((await asyncio.wait_for(self.process.stdout.readline(), 3)).strip(), b"STOPPED 0")
+            # The acknowledgement means receiver and flow tasks settled, not
+            # just that the public current pointer or UDP handles were cleared.
+            await asyncio.wait_for(asyncio.gather(*list(self.socks_tasks)), 3)
+            self.assertFalse(self.socks_tasks)
+            for port in (self.ike_port, self.nat_port):
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as check:
+                    check.bind(("127.0.0.1", port))
         finally:
             for sock in peers:
                 sock.close()

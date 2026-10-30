@@ -22,7 +22,13 @@ namespace ProGo
         private static readonly byte[] Magic = { 80, 71, 73, 75, 1 };
         private readonly object sync = new object();
         private Run current;
-        private bool starting;
+        private readonly List<Task> retiringRuns = new List<Task>();
+        internal int PendingStopCount { get { lock (sync) { int count = 0; foreach (var work in retiringRuns) if (!work.IsCompleted) count++; return count; } } }
+        private bool disposed;
+        private Task startupWork = Task.FromResult(0);
+        private Task stopWork = Task.FromResult(0);
+        internal Task StopWork { get { lock (sync) return stopWork; } }
+        internal Action BeforeStopComplete;
         private CancellationTokenSource startup;
         private string lastError;
         public bool IsRunning { get { lock (sync) return current != null; } }
@@ -40,63 +46,160 @@ namespace ProGo
         // Port injection also allows real socket integration tests without privileged ports.
         internal async Task StartAsync(string socksHost, int socksPort, int ikePort, int natPort, int bridgePort)
         {
+            await StartAsync(socksHost, socksPort, ikePort, natPort, bridgePort, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        internal Task StartAsync(string socksHost, int socksPort, int ikePort, int natPort, int bridgePort, CancellationToken token)
+        {
+            if (token.IsCancellationRequested) return FailedStart(new OperationCanceledException(token));
             IPAddress address;
             if (String.Equals(socksHost, "localhost", StringComparison.OrdinalIgnoreCase)) address = IPAddress.Loopback;
             else if (!IPAddress.TryParse(socksHost, out address) || !IPAddress.IsLoopback(address))
-                throw new InvalidOperationException("Для этого режима нужен локальный SSH/SOCKS-туннель ProGo.");
-            var source = new CancellationTokenSource();
+                return FailedStart(new InvalidOperationException("Для этого режима нужен локальный SSH/SOCKS-туннель ProGo."));
+            CancellationTokenSource source;
+            TaskCompletionSource<int> completion;
             lock (sync)
             {
-                if (current != null || starting) { source.Dispose(); return; }
-                starting = true; startup = source; lastError = null;
+                if (disposed) return FailedStart(new ObjectDisposedException("Ikev2RelayService"));
+                if (!stopWork.IsCompleted) return FailedStart(new InvalidOperationException("Остановка пересылки ещё не завершена. Дождитесь очистки и повторите запуск."));
+                foreach (var retired in retiringRuns)
+                    if (retired.Status != TaskStatus.RanToCompletion)
+                        return FailedStart(new InvalidOperationException("Предыдущая пересылка ещё не очищена. Повторите остановку VPN для телефона перед новым запуском."));
+                if (!startupWork.IsCompleted) return startupWork;
+                if (current != null) return Task.FromResult(0);
+                source = CancellationTokenSource.CreateLinkedTokenSource(token);
+                completion = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+                startup = source; startupWork = completion.Task; lastError = null;
             }
-            Run run = null;
+            Task.Run(() => StartOwnedAsync(address, socksPort, ikePort, natPort, bridgePort, source, completion));
+            return completion.Task;
+        }
+
+        private static Task FailedStart(Exception failure)
+        {
+            var result = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (failure is OperationCanceledException) result.SetCanceled(); else result.SetException(failure);
+            return result.Task;
+        }
+
+        private void CheckStartupAdmission(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            lock (sync) if (disposed || !stopWork.IsCompleted) throw new OperationCanceledException(token);
+        }
+
+        private async Task StartOwnedAsync(IPAddress address, int socksPort, int ikePort, int natPort, int bridgePort,
+            CancellationTokenSource source, TaskCompletionSource<int> completion)
+        {
+            Run run = null; Exception failure = null;
             try
             {
-                using (var probe = await ConnectAsync(address, socksPort, bridgePort, 0, source.Token).ConfigureAwait(false)) { }
-                source.Token.ThrowIfCancellationRequested();
-                run = new Run(this, address, socksPort, bridgePort, ikePort, natPort);
-                lock (sync)
+                try
                 {
-                    source.Token.ThrowIfCancellationRequested();
-                    current = run;
-                    run.Start();
+                    CheckStartupAdmission(source.Token);
+                    using (var probe = await ConnectAsync(address, socksPort, bridgePort, 0, source.Token).ConfigureAwait(false)) { }
+                    CheckStartupAdmission(source.Token);
+                    run = new Run(this, address, socksPort, bridgePort, ikePort, natPort);
+                    lock (sync)
+                    {
+                        CheckStartupAdmission(source.Token);
+                        current = run;
+                    }
+                    run.Start(); // Native socket/timer work does not hold the service metadata gate.
+                    lock (sync)
+                    {
+                        CheckStartupAdmission(source.Token);
+                        if (current != run) throw new IOException("Relay receiver stopped during startup.");
+                    }
                 }
-            }
-            catch
-            {
-                if (run != null) run.Stop();
-                lock (sync)
+                catch (Exception ex) { failure = ex; }
+                // .NET Framework's C# 5 compiler cannot await inside catch.
+                // Keep failure cleanup inside the enclosing CTS lifetime.
+                if (failure != null)
                 {
-                    if (current == run) current = null;
-                    lastError = "Не удалось запустить пересылку. Проверьте SOCKS, приёмник на VPS и свободные UDP-порты ПК.";
+                    bool cleanupFailed = false;
+                    try { if (run != null) await RetireRun(run).ConfigureAwait(false); }
+                    catch (Exception cleanup) { failure = cleanup; cleanupFailed = true; }
+                    bool cancelled = source.IsCancellationRequested || failure is OperationCanceledException;
+                    if (cancelled && !cleanupFailed) failure = new OperationCanceledException(source.Token);
+                    lock (sync)
+                    {
+                        if (current == run) current = null;
+                        lastError = cleanupFailed ? "Не удалось подтвердить очистку пересылки. Повторите остановку VPN для телефона."
+                            : cancelled ? null : "Не удалось запустить пересылку. Проверьте SOCKS, приёмник на VPS и свободные UDP-порты ПК.";
+                    }
                 }
-                throw;
             }
             finally
             {
-                lock (sync) { starting = false; startup = null; }
+                lock (sync) { if (startup == source) startup = null; }
                 source.Dispose();
             }
+            if (failure is OperationCanceledException) completion.TrySetCanceled();
+            else if (failure != null) completion.TrySetException(failure);
+            else completion.TrySetResult(0);
         }
 
-        public void Stop()
+        internal Task StopAsync()
         {
-            Run run;
+            CancellationTokenSource source;
+            Task startupSettlement;
+            TaskCompletionSource<bool> completion;
+            Action beforeComplete;
             lock (sync)
             {
-                if (startup != null) startup.Cancel();
-                run = current; current = null;
+                if (!stopWork.IsCompleted) return stopWork;
+                source = startup; startupSettlement = startupWork; beforeComplete = BeforeStopComplete;
+                completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                stopWork = completion.Task; // Admission is sealed before native cancellation starts.
             }
-            if (run != null) run.Stop();
+            Task.Run(async delegate {
+                try {
+                    if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
+                    try { await startupSettlement.ConfigureAwait(false); } catch { /* Startup owns its result. */ }
+                    Task[] pending;
+                    lock (sync) {
+                        if (current != null) { RetireRunLocked(current); current = null; }
+                        pending = retiringRuns.ToArray();
+                    }
+                    await Task.WhenAll(pending).ConfigureAwait(false);
+                    if (beforeComplete != null) beforeComplete();
+                    completion.TrySetResult(true);
+                }
+                catch (Exception ex) { completion.TrySetException(ex); }
+            });
+            return completion.Task;
         }
 
-        public void Dispose() { Stop(); }
+        public void Stop() { StopAsync().GetAwaiter().GetResult(); }
+
+        public void Dispose()
+        {
+            Task work;
+            lock (sync) { if (disposed) return; disposed = true; work = StopAsync(); }
+            work.ContinueWith(delegate(Task failed) { var ignored = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        private Task RetireRun(Run run) { lock (sync) return RetireRunLocked(run); }
+        private Task RetireRunLocked(Run run)
+        {
+            var work = run.StopAsync();
+            if (!retiringRuns.Contains(work))
+            {
+                retiringRuns.Add(work);
+                work.ContinueWith(delegate(Task done) {
+                    var ignored = done.Exception;
+                    if (done.Status == TaskStatus.RanToCompletion) lock (sync) retiringRuns.Remove(done);
+                }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+            }
+            return work;
+        }
 
         private void StopIfCurrent(Run run)
         {
-            lock (sync) if (current == run) current = null;
-            run.Stop();
+            // Register retirement before dropping current, so a concurrent
+            // Stop cannot miss a self-stopping receiver's remaining work.
+            lock (sync) { RetireRunLocked(run); if (current == run) current = null; }
         }
 
         private void Report(Run run)
@@ -180,6 +283,10 @@ namespace ProGo
             private readonly UdpClient ike, nat;
             private readonly object gate = new object();
             private readonly Dictionary<string, Flow> flows = new Dictionary<string, Flow>();
+            private readonly List<Task> receivers = new List<Task>();
+            private readonly HashSet<Task> flowWorkers = new HashSet<Task>();
+            private readonly TaskCompletionSource<bool> stopped = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            private int stopQueued;
             private System.Threading.Timer expiry;
             private DateTime nextWindow = DateTime.UtcNow;
             private int newFlows;
@@ -207,13 +314,40 @@ namespace ProGo
 
             internal void Start()
             {
-                Observe(ReceiveAsync(ike, 1)); Observe(ReceiveAsync(nat, 2));
-                expiry = new System.Threading.Timer(delegate { Expire(); }, null, 1000, 1000);
+                lock (gate)
+                {
+                    if (Volatile.Read(ref stopQueued) != 0) return;
+                    receivers.Add(ReceiveAsync(ike, 1)); receivers.Add(ReceiveAsync(nat, 2));
+                    expiry = new System.Threading.Timer(delegate { Expire(); }, null, 1000, 1000);
+                }
             }
 
-            private static void Observe(Task task)
+            private void TrackFlow(Task work)
             {
-                task.ContinueWith(delegate(Task failed) { var ignored = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+                flowWorkers.Add(work); // Caller holds gate before any stop snapshot.
+                work.ContinueWith(delegate(Task done) {
+                    var ignored = done.Exception;
+                    if (done.Status == TaskStatus.RanToCompletion) lock (gate) flowWorkers.Remove(done);
+                }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+            }
+
+            internal Task StopAsync()
+            {
+                if (Interlocked.Exchange(ref stopQueued, 1) == 0)
+                    Task.Run(async delegate {
+                        try {
+                            StopOwned();
+                            Task[] pending;
+                            lock (gate) {
+                                var all = new List<Task>(receivers); all.AddRange(flowWorkers);
+                                pending = all.ToArray();
+                            }
+                            await Task.WhenAll(pending).ConfigureAwait(false);
+                            stopped.TrySetResult(true);
+                        }
+                        catch (Exception ex) { stopped.TrySetException(ex); }
+                    });
+                return stopped.Task;
             }
 
             private async Task ReceiveAsync(UdpClient socket, byte channel)
@@ -230,7 +364,7 @@ namespace ProGo
                         Flow flow;
                         lock (gate)
                         {
-                            if (Cancel.IsCancellationRequested) return;
+                            if (Cancel.IsCancellationRequested || Volatile.Read(ref stopQueued) != 0) return;
                             if (!flows.TryGetValue(key, out flow))
                             {
                                 // Stray ESP/keepalives cannot allocate TCP connections. IKE starts a flow.
@@ -238,7 +372,7 @@ namespace ProGo
                                 { Interlocked.Increment(ref Dropped); continue; }
                                 flow = new Flow(this, key, socket, packet.RemoteEndPoint, channel);
                                 flows.Add(key, flow); newFlows++;
-                                Observe(flow.PumpAsync());
+                                TrackFlow(flow.PumpAsync());
                             }
                         }
                         flow.Enqueue(data);
@@ -269,7 +403,7 @@ namespace ProGo
                 lock (gate) flows.Remove(key);
             }
 
-            internal void Stop()
+            private void StopOwned()
             {
                 List<Flow> pending;
                 lock (gate)

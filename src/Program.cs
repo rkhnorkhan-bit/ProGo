@@ -10,71 +10,105 @@ namespace ProGo
         private static void Main(string[] args)
         {
             var selfCheck = HasArg(args, "--self-check") || HasArg(args, "/self-check") || HasArg(args, "self-check");
+            bool ownsApplication = false;
 
             try
             {
-                AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs eventArgs)
+                IDisposable startup;
+                if (!MaintenanceOperation.TryEnterStartup(out startup))
                 {
-                    var ex = eventArgs.ExceptionObject as Exception;
-                    SafeLog.Error("Fatal unhandled exception.", ex ?? new Exception(Convert.ToString(eventArgs.ExceptionObject)));
-                };
-
-                Application.ThreadException += delegate(object sender, System.Threading.ThreadExceptionEventArgs eventArgs)
-                {
-                    SafeLog.Error("Fatal UI thread exception.", eventArgs.Exception);
-                    if (!selfCheck) ShowFatal(eventArgs.Exception);
-                };
-
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-
-                AppPaths.EnsureDirectories();
-
-                if (selfCheck)
-                {
-                    RunSelfCheck();
+                    Environment.ExitCode = 4;
+                    // Do not keep this executable locked by a second modal window
+                    // while its owner is trying to replace it.
                     return;
                 }
-
-                SafeLog.Info("ProGo started.");
-
-                // Backup creation must never block tray startup. It logs internally on failure.
-                BackupService.EnsureVersionBackupExists("startup");
-
-                var showStatusOnStartup = HasArg(args, "--show") || HasArg(args, "/show") || HasArg(args, "show");
-
-                using (var settingsService = new SettingsService())
-                using (var proxyService = new ProxyService(settingsService))
-                using (var cliProxyService = new CliProxyBridgeService(settingsService))
-                using (var ikev2Relay = new Ikev2RelayService())
-                using (var homeVpn = new HomeVpnService(ikev2Relay))
-                using (var clipboardService = new ClipboardService(settingsService))
-                using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, cliProxyService, homeVpn, clipboardService, showStatusOnStartup))
+                ApplicationInstance acquired;
+                using (startup) acquired = new ApplicationInstance();
+                using (var instance = acquired)
                 {
-                    if (settingsService.Current.AutoStartSocks)
+                    if (!instance.IsOwner)
                     {
-                        proxyService.StartTunnel(false);
+                        if (selfCheck) Environment.ExitCode = 3;
+                        else if (!instance.RequestActivation())
+                            MessageBox.Show("ProGo уже работает или запускается. Подождите несколько секунд и откройте его снова.", "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+                    ownsApplication = true;
+                    AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs eventArgs)
+                    {
+                        var ex = eventArgs.ExceptionObject as Exception;
+                        SafeLog.Error("Fatal unhandled exception.", ex ?? new Exception(Convert.ToString(eventArgs.ExceptionObject)));
+                        // A terminating CLR event may bypass Main's finally.
+                        // Bound this best-effort terminal flush; normal UI logging
+                        // and recoverable ThreadException remain asynchronous.
+                        try {
+                            var log = eventArgs.IsTerminating ? SafeLog.SealProcessAsync() : SafeLog.FlushAsync();
+                            if (!log.Wait(500)) Console.WriteLine("NOT_RUN: fatal log sink did not settle before termination");
+                        } catch { }
+                    };
+
+                    Application.ThreadException += delegate(object sender, System.Threading.ThreadExceptionEventArgs eventArgs)
+                    {
+                        SafeLog.Error("Fatal UI thread exception.", eventArgs.Exception);
+                        if (!selfCheck) ShowFatal(eventArgs.Exception);
+                    };
+
+                    Application.EnableVisualStyles();
+                    Application.SetCompatibleTextRenderingDefault(false);
+
+                    AppPaths.EnsureDirectories();
+
+                    if (selfCheck)
+                    {
+                        RunSelfCheck();
+                        return;
                     }
 
-                    context.StartAutomation();
+                    SafeLog.Info("ProGo started.");
+                    var showStatusOnStartup = HasArg(args, "--show") || HasArg(args, "/show") || HasArg(args, "show");
 
-                    Application.Run(context);
+                    using (var settingsService = new SettingsService())
+                    using (var proxyService = new ProxyService(settingsService,
+                        (candidate, executable, token) => SshAuthenticationPreparation.Prepare(
+                            new SshAuthenticationPreparationRequest(candidate, executable), token)))
+                    using (var cliProxyService = new CliProxyBridgeService(settingsService))
+                    using (var ikev2Relay = new Ikev2RelayService())
+                    using (var homeVpn = new HomeVpnService(ikev2Relay, true))
+                    using (var clipboardService = new ClipboardService(settingsService))
+                    using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, cliProxyService, homeVpn, clipboardService, showStatusOnStartup))
+                    {
+                        context.StartAutomation();
+                        instance.Attach(context.RequestShowStatus, context.RequestShutdown, context.CompleteShutdown, context.CancelShutdown);
+                        context.StartSshAgentAsync();
+                        context.StartShortcutMigrationAsync(Application.ExecutablePath, AppPaths.Root);
+                        context.StartStartupBackupAsync();
+
+                        Application.Run(context);
+                    }
+
+                    SafeLog.Info("ProGo stopped.");
                 }
-
-                SafeLog.Info("ProGo stopped.");
             }
             catch (Exception ex)
             {
-                try { SafeLog.Error(selfCheck ? "ProGo self-check failed." : "ProGo startup failed.", ex); }
+                try { if (ownsApplication) SafeLog.Error(selfCheck ? "ProGo self-check failed." : "ProGo startup failed.", ex); }
                 catch { }
 
                 if (selfCheck)
                 {
-                    Environment.Exit(2);
+                    Environment.ExitCode = 2;
                     return;
                 }
 
                 ShowFatal(ex);
+            }
+            finally {
+                // This runs after the native UI loop has ended (or startup
+                // failed). Ordinary handoff already sealed/drained its owner.
+                if (ownsApplication) try {
+                    if (!SafeLog.SealProcessAsync().Wait(500))
+                        Console.WriteLine("NOT_RUN: final best-effort log sink did not settle before process exit");
+                } catch { /* Logging cannot prevent process termination. */ }
             }
         }
 
@@ -96,7 +130,7 @@ namespace ProGo
             if (String.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath)) throw new FileNotFoundException("Executable path is not available.", exePath);
 
             SafeLog.Info("Self-check completed.");
-            Environment.Exit(0);
+            Environment.ExitCode = 0;
         }
 
         private static bool HasArg(string[] args, string value)

@@ -7,11 +7,10 @@ param(
 # They do not expose the SOCKS/HTTP proxies or change other firewall rules.
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot 'Firewall-ProGo.ps1')
 $RuleNames = @("ProGo-Home-IKE", "ProGo-Home-NAT-T")
 if ($Remove) {
-    foreach ($name in $RuleNames) {
-        Get-NetFirewallRule -Name $name -ErrorAction SilentlyContinue | Remove-NetFirewallRule
-    }
+    Remove-ProGoHomeFirewallRules $ProGoExe
     return
 }
 $ExePath = (Resolve-Path -LiteralPath $ProGoExe).ProviderPath
