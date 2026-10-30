@@ -255,6 +255,8 @@ int main(void) {
 #include <wchar.h>
 #include <wctype.h>
 #include "personal_broker_policy.h"
+/* Harness mapping AFTER all CRT headers, BEFORE extracted consumed bodies. */
+#define wcscpy_s progo_identity_fixture_wcscpy_s
 typedef unsigned long DWORD;
 typedef struct { DWORD dwHighDateTime,dwLowDateTime; } FT;
 typedef struct { DWORD dwFileAttributes,dwVolumeSerialNumber,nFileIndexHigh,nFileIndexLow; FT ftCreationTime; } BY_HANDLE_FILE_INFORMATION;
@@ -285,7 +287,7 @@ static int foldcmp(const wchar_t *a,const wchar_t *b) {
     return (int)towlower(*a)-(int)towlower(*b);
 }
 #define _wcsicmp foldcmp
-static int wcscpy_s(wchar_t *out,size_t n,const wchar_t *in) {
+static int progo_identity_fixture_wcscpy_s(wchar_t *out,size_t n,const wchar_t *in) {
     if(wcslen(in)>=n) return 1;
     wcscpy(out,in); return 0;
 }
@@ -406,6 +408,34 @@ int main(void) {
             result = subprocess.run([str(executable)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn('vectors17; Windows alias proof NOT_RUN', result.stdout)
+            # Linux CRT lacks Annex K; emulate its prior external declaration.
+            # Windows uses the real CRT declaration already included above.
+            crt_harness = harness.replace(
+                '#include "personal_broker_policy.h"',
+                '#include "personal_broker_policy.h"\n#ifndef _WIN32\n'
+                'extern int wcscpy_s(wchar_t *,size_t,const wchar_t *);\n#endif')
+            old_harness = crt_harness.replace(
+                '#define wcscpy_s progo_identity_fixture_wcscpy_s\n', '').replace(
+                'static int progo_identity_fixture_wcscpy_s(', 'static int wcscpy_s(')
+            old_source = pathlib.Path(temp)/'identity-old-name.c'
+            old_source.write_text(old_harness)
+            flags = [compiler, '-std=c11', '-Wall', '-Wextra', '-Werror',
+                     '-I', str(ROOT/'native')]
+            rejected = subprocess.run(flags + ['-c', str(old_source), '-o', str(pathlib.Path(temp)/'old.o')],
+                                      capture_output=True, text=True)
+            self.assertNotEqual(rejected.returncode, 0, 'old static CRT name must conflict')
+            self.assertIn('wcscpy_s', rejected.stderr)
+            self.assertIn('follows non-static declaration', rejected.stderr)
+            crt_source = pathlib.Path(temp)/'identity-predeclared.c'
+            crt_source.write_text(crt_harness)
+            crt_executable = pathlib.Path(temp)/'identity-predeclared'
+            accepted = subprocess.run(flags + [str(crt_source), '-o', str(crt_executable)],
+                                      capture_output=True, text=True)
+            self.assertEqual(accepted.returncode, 0, accepted.stderr)
+            actual = subprocess.run([str(crt_executable)], capture_output=True, text=True)
+            self.assertEqual(actual.returncode, 0, actual.stderr)
+            self.assertIn('vectors17; Windows alias proof NOT_RUN', actual.stdout)
+
 
     def test_diagnostic_preprocessor_is_fixture_only(self):
         compiler = shutil.which('cc')

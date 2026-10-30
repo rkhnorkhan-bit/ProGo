@@ -1,3 +1,120 @@
+## CI768 harness CRT collision fix — local only, review pending
+
+Sole writer verified clean9b20e4a7810104ec9f76e7edcdd5d9c14d65bb17 /
+tree4f97b9637bb25542d77bcf5319caa6452edd869b, exact checkout/backing Git,
+AGENTS absent, no locks or competing git/compiler/PowerShell processes. CI768
+independently confirmed FAILURE: all9 complete execution logs970936 bytes, exact
+source2f80bfd9ace1fa1e4e182586c7172e451a035364 /
+merge401cbb6ee06d0dc45dca3db04b24a838b22b427d attempt1. Core skipped without
+runner/steps/log; no identity/launch/package proof. Terminal details retained below.
+
+Bounded correction in tests/test_personal_broker.py only: generated identity.c
+static wcscpy_s renamed progo_identity_fixture_wcscpy_s. Harness-only macro maps
+wcscpy_s to that prefixed implementation AFTER all CRT/policy headers and BEFORE
+extracted consumed C bodies. Existing headers retain their original declarations;
+native source is unchanged, and consumed functions bind to the synthetic copy shim
+without redeclaring the CRT symbol. Shim bounds/copy behavior unchanged.
+
+Added regression inside the SAME actual consumed identity harness test. Normal
+harness still compiles/runs with existing cc and -std=c11 -Wall -Wextra -Werror.
+A second variant inserts an external wcscpy_s prototype after headers on non-Windows
+(the local CRT lacks Annex K); Windows retains its real prior CRT declaration.
+Reverting only shim name/macro must fail compilation and specifically report
+wcscpy_s follows non-static declaration. The corrected actual harness with the
+same prior prototype must compile under identical strict flags and execute all17
+vectors. No skipped assertion/vector, warning suppression, optimistic stub oracle
+or substitute unconsumed helper. This is local synthetic declaration proof, not
+actual Windows MinGW success or native launch proof.
+
+Other identity-harness shim names reviewed: foldcmp/object_for/run are local
+non-CRT helpers; QueryDosDeviceW/GetDriveTypeW/CreateFileW/CloseHandle/
+GetFileInformationByHandle/CreateDirectoryW/HeapAlloc and GetLastError/SetLastError/
+GetProcessHeap are synthetic Win32 hooks, not CRT functions. _wcsicmp is mapped to
+foldcmp after headers and does not declare a competing static CRT function. No
+other analogous CRT collision demonstrated by actual current compilation or the
+included local stdio/stdlib/string/wchar/wctype header declarations. Only confirmed
+wcscpy_s collision changed; this audit is not a claim about every Windows SDK.
+
+Local205 Python tests:202 PASS/3 SKIP, including unchanged17 consumed identity
+vectors plus prior-prototype negative/positive builds and actual serializer/policy/
+preprocessing tests. Public scan469source/0release PASS; diff and scope checks PASS.
+All src/native/scripts/workflow and PowerShell fixtures byte-identical to9b20;
+production guards, exact inventories, mandatory suites, assertions, strict warnings,
+deadlines, privacy and scheduling unchanged. No tools installed. Windows native
+compile/PowerShell runtime/actual aliases/case-sensitive NTFS/elevation/PC proof
+NOT_RUN. No new Windows result supersedes CI768 FAILURE.
+
+Full delta from9b20 and exact final clean HEAD/tree/bytes/SHA256, local checks and
+scope are saved beside checkout in ci768-crt-harness-review/. Writer stops for
+independent review BEFORE publication/CI. No push, dispatch, rerun, CI, artifact
+publication or actual UAC/HKLM/ProgramFiles/ACL/production-network/credentials/
+owner-PC actions in this stage.
+
+## CI768 terminal FAILURE — MinGW synthetic harness declaration collision; Core skipped
+
+Sole writer reverified clean33112ce8826d5e194fde011a751e4bae12bcae56 /
+tree1e474317ba2fb6d2b6dbe0552a61a76f89c68ec3, exact checkout/branch/backing Git,
+AGENTS absent, no locks or competing git/compiler/PowerShell processes. Reviewed
+cumulative stage delta29014 bytes SHA2564f6deabb4fe0e426c21473ea0a857b53c5f3be4573c972db595da49f7049789b
+and correction11041 bytes SHA25672348de73eeb93e482773b2d458f403993d8a940b19fa32ac9caf25de61ab8b7.
+Expected PR88 source0629bcf8c36c3ee0ec44ea064ced04c127a29096 and all-event
+queued/in_progress/waiting/pending/requested0 checked twice before publication.
+Canonical Git blobs and reconstructed tree matched exact reviewed content.
+
+Non-force expected-SHA CAS published source2f80bfd9ace1fa1e4e182586c7172e451a035364,
+parent0629bcf8 above, reviewed tree above, preserving history. Exactly one automatic
+pull_request CI768 run40974749981 attempt1; no dispatch, rerun or duplicate.
+Tested merge401cbb6ee06d0dc45dca3db04b24a838b22b427d has the same reviewed tree;
+parents main4bb336575bb1216d3047bd2b294aeecad9fdd65a and published source2f80bfd9.
+Terminal FAILURE at2026-10-30 00:06:59UTC /03:06:59 Europe/Istanbul. Final remote
+PR88 source/merge unchanged, source run count1/attempt1, all-event active0.
+
+All9 COMPLETE full execution logs saved and verified:970936 decoded UTF-8 bytes,
+exact source/merge/Complete job in each and individual SHA256. All10 job statuses
+preserved:7 prerequisite SUCCESS, windows-relay-tests FAILURE, windows-build SKIPPED,
+strict aggregate FAILURE. Skipped windows-build has steps=[] and no runner/execution
+log; logs request returned404 BlobNotFound. Metadata saved separately, no fabricated
+tenth log. User independently confirmed all9 logs and statuses after terminal.
+
+Seven successful prerequisites: Foundation, Live, Recovery, RecoveryInput, Runtime,
+Success and isolated Ubuntu. All33 old Installer suites retained; Runtime35 plus
+refusals and Success40 plus2 fresh-process refusals confirmed. Relay C# tests before
+Python succeeded, including Portable91. Relay Python189:186 PASS/1 FAIL/2 SKIP.
+Seven other broker Python cases passed: portable hostile-environment policy,
+consumed factory source contracts, fixture-only preprocessing boundary, actual
+numeric serializer/schema v2, managed/TLS/resource refusal, native identity binding,
+relocation escape refusal. These do not prove actual native host runtime.
+
+First failure: tests/test_personal_broker.py:405,
+test_consumed_fixture_identity_with_faulted_directory_backend. Existing Windows
+MinGW cc rejects generated identity.c: static declaration of wcscpy_s follows
+non-static declaration. The synthetic harness static wcscpy_s conflicts with the
+CRT declaration in sec_api/string_s.h:78. This is a confirmed harness portability
+compiler defect, not an observed native launch/policy/identity refusal. All17
+identity vectors were NOT_EXECUTED in CI768 because compilation failed.
+
+Core job was entirely SKIPPED after prerequisite failure. No new fixture identity
+result, raw/long matches, native stage/error/parent exit, host created/assigned/
+resumed/exit or job accounting values exist for this run. Do NOT reuse CI767 values
+or interpret NOT_RUN as zero/success. Native/Core build, Repair42, Stage10,
+Personal18, NativeRegistration15, NativeBrokerLaunch, PersonalBrokerTests and both
+icon host steps were NOT_RUN in windows-build. No Windows alias/case-sensitive NTFS
+physical identity, trusted host boundary, elevation or installation proof gained.
+
+Core identity/release scan/ZIP/upload steps did not execute; ZIP NOT_PRODUCED,
+package SHA256 nonexistent, artifacts0. No binary delivery/acceptance or actual
+UAC/HKLM/ProgramFiles/ACL/production-network/credentials/owner-PC actions. Checks,
+deadlines, privacy, scheduling and source assertions unchanged. No source fix or
+additional publication/CI after failure.
+
+Evidence beside checkout: ci768-evidence/publication.json, initial/final-metadata,
+verified-summary.json, windows-build-skipped.json and9 full .log files. Checkpoint
+and manifest record exact final clean HEAD/tree and saved patches/log hashes.
+Only this terminal prefix added locally to PROJECT_STATE, not published; all other
+source/tests match reviewed33112ce. Local public scan/diff/source-equality checks
+rerun. Writer stops clean. Next harness portability correction requires a separate
+agreed reviewed stage; no automatic fix, repeat CI or PC action in this stage.
+
 ## Fixture identity cache-skip correction — local only, review pending
 
 Sole writer verified clean6268de7036c0616f03737493bb7afca0dfc7ecc3 /
