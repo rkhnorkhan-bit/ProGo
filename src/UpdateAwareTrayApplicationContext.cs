@@ -138,6 +138,16 @@ namespace ProGo
                     automation.Update(before, settings.Current);
                     // Apply edited process rules only after an explicit Save.
                     smartRouting.Stop();
+                    if (settings.Current.SmartRoutingEnabled)
+                    {
+                        DisableCli();
+                        if (SystemProxyService.IsOwned)
+                        {
+                            string restoreMessage;
+                            if (!SystemProxyService.Restore(out restoreMessage))
+                                SafeLog.Error("Legacy Windows proxy restore failed.", new InvalidOperationException(restoreMessage));
+                        }
+                    }
                     smartFailures = 0;
                     smartSuppressed = false;
                     nextSmartAttempt = DateTime.MinValue;
