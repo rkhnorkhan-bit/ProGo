@@ -33,6 +33,12 @@ supports HTTP requests and HTTPS CONNECT over SSH/SOCKS. This does not capture a
 traffic. Previous user settings are restored where still owned by ProGo on disconnect
 or exit; existing processes must be restarted to refresh their environment.
 
+## Experimental application routing (draft branch)
+
+A per-application **Auto / VPS / Direct** editor and optional sing-box TUN engine
+are under development. This is **not** in the published release and is not
+ready for production deployment. See [requirements, setup and risk limits](docs/SMART_ROUTING.md).
+
 ## Application proxy port
 
 **Настройки → Порт приложений** defaults to automatic selection. ProGo first tries the
