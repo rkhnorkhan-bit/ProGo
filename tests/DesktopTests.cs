@@ -84,7 +84,7 @@ namespace ProGo
                             var flow = Descendants(tabs.TabPages[0]).OfType<FlowLayoutPanel>().First();
                             flow.AutoScrollPosition = new Point(0, 1000); Shot(form, "settings-bottom");
                             for (int i = 1; i < tabs.TabCount; i++) { tabs.SelectedIndex = i; Application.DoEvents(); Shot(form, "settings-" + i); }
-                            Check(tabs.TabCount == 5 && tabs.TabPages[4].Text == "Порт приложений", "application port controls have a separate settings page");
+                            Check(tabs.TabCount == 6 && tabs.TabPages[4].Text == "Порт приложений" && tabs.TabPages[5].Text == "Приложения", "application port and smart routing controls have separate settings pages");
                             var portTab = tabs.TabPages[4];
                             var autoPort = Descendants(portTab).OfType<CheckBox>().Single();
                             var portNumber = Descendants(portTab).OfType<NumericUpDown>().Single();
