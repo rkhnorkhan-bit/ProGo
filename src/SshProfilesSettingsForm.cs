@@ -289,12 +289,20 @@ namespace ProGo
 
         private void Save(object sender, EventArgs e)
         {
-            if (appRouting.SmartRoutingEnabled && autoWindows.Checked)
+            if (appRouting.SmartRoutingEnabled && (autoWindows.Checked || autoProxy.Checked || autoCodex.Checked))
             {
-                MessageBox.Show("Для маршрутизации по приложениям отключите автоматический системный HTTP-прокси Windows во вкладке «Автоматика». Старые настройки ProGo останутся доступными.", "ProGo Smart Routing", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                DialogResult = DialogResult.None;
-                settingsTabs.SelectedIndex = 0;
-                return;
+                var answer = MessageBox.Show(
+                    "Для маршрутизации по приложениям нужно выключить глобальный прокси Windows и переменные HTTP_PROXY/HTTPS_PROXY. Существующее SSH/SOCKS-подключение останется. Чтобы Codex работал через VPS, задайте ему правило «VPS» на вкладке «Приложения».\n\nОтключить старые автоматические прокси и сохранить TUN-режим?",
+                    "Переключение на Smart Routing", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (answer != DialogResult.Yes)
+                {
+                    DialogResult = DialogResult.None;
+                    settingsTabs.SelectedIndex = 5;
+                    return;
+                }
+                autoWindows.Checked = false;
+                autoProxy.Checked = false;
+                autoCodex.Checked = false;
             }
             var selected = SelectedProfile();
             var selectedTarget = selected == null ? String.Empty : selected.Target;
