@@ -92,6 +92,7 @@ namespace ProGo
                 if (settingsService.Current.HttpProxyPort < 1 || settingsService.Current.HttpProxyPort > 65535) throw new InvalidOperationException("Invalid CLI proxy port.");
             }
 
+            ApplicationRoutingSelfTest.Run();
             var exePath = Application.ExecutablePath;
             if (String.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath)) throw new FileNotFoundException("Executable path is not available.", exePath);
 
