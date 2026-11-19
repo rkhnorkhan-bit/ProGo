@@ -150,6 +150,7 @@ namespace ProGo
                 DiscoverApps();
             }
             finally { loading = false; }
+            RefreshRows();
         }
 
         public List<ApplicationRouteRule> GetRules()
