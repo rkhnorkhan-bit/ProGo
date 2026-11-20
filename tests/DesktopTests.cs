@@ -85,6 +85,11 @@ namespace ProGo
                             flow.AutoScrollPosition = new Point(0, 1000); Shot(form, "settings-bottom");
                             for (int i = 1; i < tabs.TabCount; i++) { tabs.SelectedIndex = i; Application.DoEvents(); Shot(form, "settings-" + i); }
                             Check(tabs.TabCount == 6 && tabs.TabPages[4].Text == "Порт приложений" && tabs.TabPages[5].Text == "Приложения", "application port and smart routing controls have separate settings pages");
+                            tabs.SelectedIndex = 5; Application.DoEvents();
+                            var routingGrid = Descendants(tabs.TabPages[5]).OfType<DataGridView>().Single();
+                            Check(routingGrid.Columns.Count == 3 && routingGrid.Columns[2].Visible &&
+                                routingGrid.Columns[2].Displayed, "app route selector column must be visible");
+                            tabs.SelectedIndex = 4; Application.DoEvents();
                             var portTab = tabs.TabPages[4];
                             var autoPort = Descendants(portTab).OfType<CheckBox>().Single();
                             var portNumber = Descendants(portTab).OfType<NumericUpDown>().Single();
