@@ -206,6 +206,12 @@ namespace ProGo
                     else
                     {
                         if (String.IsNullOrWhiteSpace(routingMessage)) routingMessage = "Маршрутизатор не запустился.";
+                        if (routingMessage.StartsWith("Ожидание", StringComparison.Ordinal))
+                        {
+                            nextSmartAttempt = DateTime.UtcNow.AddSeconds(6);
+                        }
+                        else
+                        {
                         smartFailures++;
                         SafeLog.Error("Automatic routing start failed.", new InvalidOperationException(routingMessage));
                         if (routingMessage.Contains("администратора") || routingMessage.Contains("sing-box.exe")
@@ -216,6 +222,7 @@ namespace ProGo
                         }
                         else
                             nextSmartAttempt = DateTime.UtcNow.AddSeconds(5 * (1 << (smartFailures - 1)));
+                        }
                     }
                 }
             };
