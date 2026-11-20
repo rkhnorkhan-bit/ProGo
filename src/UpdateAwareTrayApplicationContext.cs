@@ -177,9 +177,11 @@ namespace ProGo
                 if (settings.Current.SmartRoutingEnabled && !smartSuppressed && ready
                     && !smartRouting.IsActive && DateTime.UtcNow >= nextSmartAttempt)
                 {
-                    string routingMessage;
-                    EnsureBridge();
-                    if (smartRouting.Start(out routingMessage))
+                    string routingMessage = null;
+                    bool started = false;
+                    try { EnsureBridge(); started = smartRouting.Start(out routingMessage); }
+                    catch (Exception ex) { routingMessage = ex.Message; SafeLog.Error("Smart routing startup exception.", ex); }
+                    if (started)
                     {
                         StartSmartMonitor();
                         smartFailures = 0;
@@ -188,6 +190,7 @@ namespace ProGo
                     }
                     else
                     {
+                        if (String.IsNullOrWhiteSpace(routingMessage)) routingMessage = "Маршрутизатор не запустился.";
                         smartFailures++;
                         SafeLog.Error("Automatic routing start failed.", new InvalidOperationException(routingMessage));
                         if (routingMessage.Contains("администратора") || routingMessage.Contains("sing-box.exe")
