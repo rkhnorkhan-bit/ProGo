@@ -250,8 +250,8 @@ foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.
 & $Build
 $Exe = Join-Path $Root "release\ProGo.exe"
 if (-not (Test-Path $Exe)) { Fail "release ProGo.exe missing" }
-& $Exe --self-check
-if ($LASTEXITCODE -ne 0) { Fail 'Routing model and application self-check failed' }
+$checkProcess = Start-Process -FilePath $Exe -ArgumentList "--self-check" -PassThru -Wait
+if ($checkProcess.ExitCode -ne 0) { Fail "Routing model and application self-check failed: $($checkProcess.ExitCode)" }
 $ReleaseIcon = Join-Path $Root "release\ProGo.ico"
 if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
