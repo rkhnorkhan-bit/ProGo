@@ -52,15 +52,36 @@ namespace ProGo
                         return "UNKNOWN";
                     }
                     var result = p.StandardOutput.ReadToEnd().Trim();
-                    return p.ExitCode == 0 && result.Length != 0 ? result : "UNKNOWN";
+                    if (p.ExitCode != 0 || result.Length == 0) return "UNKNOWN";
+                    // Task Scheduler marks the guard as Running even while it
+                    // waits for SSH. Only the host heartbeat proves TUN is up.
+                    if (String.Equals(result, "Running", StringComparison.OrdinalIgnoreCase))
+                        return HasFreshTUNHeartbeat() ? "Running" : "Waiting";
+                    return result;
                 }
             }
             catch (Exception) { return "UNKNOWN"; }
         }
 
+        internal static bool HasFreshTUNHeartbeat()
+        {
+            try
+            {
+                var status = Path.Combine(AppPaths.Root, "smart-routing", "guard-status.txt");
+                var value = File.ReadAllText(status).Trim().Split('|');
+                long ticks;
+                if (value.Length != 2 || value[0] != "RUNNING" ||
+                    !Int64.TryParse(value[1], out ticks)) return false;
+                var age = DateTime.UtcNow.Ticks - ticks;
+                return age >= 0 && age < TimeSpan.FromSeconds(10).Ticks;
+            }
+            catch (Exception) { return false; }
+        }
+
         internal static bool IsManagedState(string state)
         {
             return String.Equals(state, "Ready", StringComparison.OrdinalIgnoreCase) ||
+                   String.Equals(state, "Waiting", StringComparison.OrdinalIgnoreCase) ||
                    String.Equals(state, "Running", StringComparison.OrdinalIgnoreCase) ||
                    String.Equals(state, "Queued", StringComparison.OrdinalIgnoreCase);
         }
