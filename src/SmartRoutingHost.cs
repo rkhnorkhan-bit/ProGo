@@ -58,6 +58,20 @@ namespace ProGo
 
         private static int Main(string[] args)
         {
+            if (args != null && args.Length == 1 && args[0] == "--self-check")
+            {
+                // Side-effect free: creates no scheduled tasks, network adapters
+                // or background processes on the Windows CI worker.
+                var valid = new Dictionary<string, object> {
+                    { "SmartRoutingEnabled", true }, { "AutoSystemProxy", false }
+                };
+                if (!Enabled(valid)) return 20;
+                valid["AutoSystemProxy"] = true;
+                if (Enabled(valid)) return 21;
+                valid["SmartRoutingEnabled"] = false;
+                if (Enabled(valid)) return 22;
+                return Marshal.SizeOf(typeof(ExtendedLimit)) >= 128 ? 0 : 23;
+            }
             if (args != null && args.Length != 0) return 10;
             try { return Run(); }
             catch (Exception ex)
