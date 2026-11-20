@@ -57,11 +57,7 @@ namespace ProGo
 
         public static string DefaultEnginePath
         {
-            get
-            {
-                return File.Exists(SmartRoutingTask.ProtectedEnginePath) ? SmartRoutingTask.ProtectedEnginePath :
-                    Path.Combine(AppPaths.Root, "tools", "sing-box.exe");
-            }
+            get { return SmartRoutingTask.ProtectedEnginePath; }
         }
 
         internal static void PrepareConfig(AppSettings options)
