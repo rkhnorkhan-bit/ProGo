@@ -13,6 +13,7 @@ namespace ProGo
         private readonly HomeVpnService homeVpn;
         private readonly ClipboardService clipboard;
         private readonly SmartRoutingEngine smartRouting;
+        private SmartRouteMonitor smartMonitor;
         private int smartFailures;
         private DateTime nextSmartAttempt = DateTime.MinValue;
         private bool smartSuppressed;
@@ -137,6 +138,7 @@ namespace ProGo
                     homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
                     automation.Update(before, settings.Current);
                     // Apply edited process rules only after an explicit Save.
+                    StopSmartMonitor();
                     smartRouting.Stop();
                     if (settings.Current.SmartRoutingEnabled)
                     {
@@ -171,12 +173,15 @@ namespace ProGo
                     if (automation.Take(feature, ready))
                         try { EnableFeature(feature); }
                         catch (Exception ex) { SafeLog.Error("Automatic proxy setup failed.", ex); tray.ShowBalloonTip(5000, "ProGo", ex.Message, ToolTipIcon.Warning); }
+                if (!smartRouting.IsActive && smartMonitor != null) StopSmartMonitor();
                 if (settings.Current.SmartRoutingEnabled && !smartSuppressed && ready
                     && !smartRouting.IsActive && DateTime.UtcNow >= nextSmartAttempt)
                 {
                     string routingMessage;
+                    EnsureBridge();
                     if (smartRouting.Start(out routingMessage))
                     {
+                        StartSmartMonitor();
                         smartFailures = 0;
                         nextSmartAttempt = DateTime.MinValue;
                         UpdateTooltip();
@@ -208,19 +213,23 @@ namespace ProGo
                     case "restart": proxy.RestartTunnel(); break;
                     case "stop":
                         smartSuppressed = true;
+                        StopSmartMonitor();
                         smartRouting.Stop();
                         foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
                         DisconnectApps(); proxy.StopTunnel(); break;
                     case "settings": ShowSettings(); break;
                     case "smart-on":
                         RequireRoute();
+                        EnsureBridge();
                         string routingError;
                         if (!smartRouting.Start(out routingError)) throw new InvalidOperationException(routingError);
+                        StartSmartMonitor();
                         smartFailures = 0;
                         smartSuppressed = false;
                         break;
                     case "smart-off":
                         smartSuppressed = true;
+                        StopSmartMonitor();
                         smartRouting.Stop();
                         break;
                     case "vault": ShowVault(); break;
@@ -281,8 +290,30 @@ namespace ProGo
         {
             tray.ShowBalloonTip(6000, "CLI-прокси включён", "Codex можно запускать обычным способом. Полностью перезапустите уже открытый терминал или приложение с Codex. Отдельный ярлык не нужен.", ToolTipIcon.Info);
         }
+        private void StartSmartMonitor()
+        {
+            if (smartMonitor != null) return;
+            try
+            {
+                var monitor = new SmartRouteMonitor(cliProxy.ProxyUrl);
+                monitor.Start();
+                smartMonitor = monitor;
+            }
+            catch (Exception ex)
+            {
+                SafeLog.Error("Auto route diagnostics could not start; fixed routes still active.", ex);
+                tray.ShowBalloonTip(6000, "Умная маршрутизация", "Автоматическая проверка доменов недоступна. Ручные правила продолжают работать.", ToolTipIcon.Warning);
+            }
+        }
+        private void StopSmartMonitor()
+        {
+            var monitor = smartMonitor;
+            smartMonitor = null;
+            if (monitor != null) monitor.Dispose();
+        }
         private void DisconnectApps()
         {
+            StopSmartMonitor();
             smartRouting.Stop();
             try { CliProxyEnvironmentService.ClearUserEnvironmentIfOwned(); }
             catch (Exception ex) { SafeLog.Error("Environment restore failed.", ex); }
