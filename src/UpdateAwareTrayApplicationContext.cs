@@ -157,8 +157,8 @@ namespace ProGo
                             if (!SystemProxyService.Restore(out restoreMessage))
                                 SafeLog.Error("Legacy Windows proxy restore failed.", new InvalidOperationException(restoreMessage));
                         }
-                        try { ApplicationRouting.SaveManualRuleSets(settings.Current); }
-                        catch (Exception ex) { SafeLog.Error("Manual routing rule refresh failed.", ex); }
+                        try { SmartRoutingEngine.PrepareConfig(settings.Current); }
+                        catch (Exception ex) { SafeLog.Error("Routing configuration preparation failed.", ex); }
                         if (smartRouting.IsActive && before.HttpProxyPort != settings.Current.HttpProxyPort)
                         {
                             StopSmartMonitor();
