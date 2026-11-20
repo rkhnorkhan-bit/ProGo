@@ -90,13 +90,17 @@ namespace ProGo
             Directory.CreateDirectory(folder);
             var rulePath = Path.Combine(folder, "auto-proxy.json");
             File.WriteAllText(rulePath, SmartDomainPolicy.GenerateRuleSet(new[] { "chatgpt.com" }));
+            var manualDirectPath = Path.Combine(folder, "manual-direct.json");
+            var manualProxyPath = Path.Combine(folder, "manual-proxy.json");
             var settings = AppSettings.Defaults();
             settings.SocksHost = "127.0.0.1";
             settings.SocksPort = 1080;
             settings.ApplicationRoutes.Add(new ApplicationRouteRule { ExecutablePath = @"C:\Apps\ProxyApp.exe", Mode = "proxy" });
             settings.ApplicationRoutes.Add(new ApplicationRouteRule { ExecutablePath = @"C:\Apps\DirectApp.exe", Mode = "direct" });
+            File.WriteAllText(manualDirectPath, ApplicationRouting.GenerateApplicationRuleSet(settings, ApplicationRouting.Direct));
+            File.WriteAllText(manualProxyPath, ApplicationRouting.GenerateApplicationRuleSet(settings, ApplicationRouting.Proxy));
             File.WriteAllText(Path.Combine(folder, "active.json"),
-                ApplicationRouting.GenerateSingBoxConfig(settings, rulePath));
+                ApplicationRouting.GenerateSingBoxConfig(settings, rulePath, manualDirectPath, manualProxyPath));
         }
 
         private static void RunSelfCheck()
