@@ -16,6 +16,8 @@ if (-not $admin.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Adminis
 $name = "ProGoSmartRouting"
 $dir = Join-Path $env:ProgramFiles "ProGoRoutingEngine"
 $exe = Join-Path $dir "sing-box.exe"
+$startupMarker = Join-Path $dir "autostart-owned.txt"
+$run = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
 $config = Join-Path $env:LOCALAPPDATA "ProGo\smart-routing\active.json"
 $argsLine = 'run -c "' + $config + '"'
 $progo = Join-Path $env:LOCALAPPDATA "ProGo\ProGo.exe"
@@ -39,6 +41,13 @@ if ($Remove) {
         Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
         Unregister-ScheduledTask -TaskName $name -Confirm:$false
     }
+    $expectedRun = '"' + $progo + '"'
+    $runEntry = (Get-ItemProperty -Path $run -Name "ProGo" -ErrorAction SilentlyContinue).ProGo
+    if ((Test-Path $startupMarker) -and $runEntry -eq $expectedRun) {
+        Remove-ItemProperty -Path $run -Name "ProGo"
+        Remove-Item -LiteralPath $startupMarker -Force
+        Write-Host "ProGo startup entry installed by the routing engine has been reverted."
+    }
     Write-Host "Owned routing task removed. Engine files and ProGo settings preserved."
     return
 }
@@ -51,6 +60,10 @@ if (-not (Test-Path $progo)) {
 }
 if (-not (Test-Path $config)) {
     throw "No Smart Routing config. Enable Smart Routing, save and start ProGo before installing the task."
+}
+$progoSettings = Get-Content (Join-Path $env:LOCALAPPDATA "ProGo\settings.json") -Encoding UTF8 -Raw | ConvertFrom-Json
+if (-not $progoSettings.SmartRoutingEnabled -or $progoSettings.AutoSystemProxy) {
+    throw "Enable SmartRoutingEnabled and disable legacy AutoSystemProxy in ProGo before installing the task."
 }
 
 $zipPath = Join-Path $env:TEMP ("progo-tun-" + [guid]::NewGuid().ToString("N") + ".zip")
@@ -73,6 +86,14 @@ try {
         throw "Protected executable checksum mismatch."
     }
 
+    # Restrict modifications to SYSTEM and local administrators. Ordinary
+    # users receive only Read/Execute to the privileged TUN binary.
+    & icacls.exe $dir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-32-545:(OI)(CI)RX' /T /C | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Unable to secure TUN engine folder ACL." }
+
+    & $exe check -c $config
+    if ($LASTEXITCODE -ne 0) { throw "sing-box check rejected live config; task was not registered." }
+
     $userId = $id.Name
     $action = New-ScheduledTaskAction -Execute $exe -Argument $argsLine -WorkingDirectory (Split-Path $config)
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User $userId
@@ -81,9 +102,17 @@ try {
     $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval ([TimeSpan]::FromMinutes(1)) -MultipleInstances IgnoreNew -StartWhenAvailable
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description "ProGo Smart Routing TUN; SHA-256 verified sing-box 1.14.4" -Force | Out-Null
 
-    # A regular unelevated ProGo session owns the existing SSH/SOCKS process.
-    $run = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-    Set-ItemProperty -Path $run -Name "ProGo" -Value ('"' + $progo + '"')
+    # Preserve pre-existing user startup commands and only install our own
+    # startup entry when none exists. An ownership marker enables safe removal.
+    $expectedRun = '"' + $progo + '"'
+    $runEntry = (Get-ItemProperty -Path $run -Name "ProGo" -ErrorAction SilentlyContinue).ProGo
+    if ($null -eq $runEntry) {
+        New-ItemProperty -Path $run -Name "ProGo" -PropertyType String -Value $expectedRun | Out-Null
+        Set-Content -LiteralPath $startupMarker -Value $userId -Encoding ASCII
+    }
+    elseif ($runEntry -ne $expectedRun) {
+        Write-Warning "Existing ProGo startup command was preserved; configure autostart manually if needed."
+    }
     Write-Host "Protected TUN installed. Task: $name; owner: $userId."
     Write-Host "Starts 45 seconds after logon. Set AutoStartSocks in ProGo."
 }
