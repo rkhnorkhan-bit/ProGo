@@ -19,6 +19,7 @@ namespace ProGo
         private DateTime lastTaskCheck = DateTime.MinValue;
         private bool taskRunning;
         private bool taskOwned;
+        private bool taskRefreshInProgress;
         private const string PinnedEngineSha256 = "8f30682ee198855440d2a7fe070d5d3653793b2d01bb8c85eea88f93bbe7c8b9";
 
         public SmartRoutingEngine(SettingsService settingsService, ProxyService proxyService)
@@ -35,14 +36,20 @@ namespace ProGo
                 {
                     try { if (active != null && !active.HasExited) return true; }
                     catch (InvalidOperationException) { }
-                    if (DateTime.UtcNow - lastTaskCheck < TimeSpan.FromSeconds(8)) return taskRunning;
-                }
-                var state = SmartRoutingTask.State();
-                lock (gate)
-                {
-                    taskRunning = SmartRoutingTask.IsRunningState(state);
-                    taskOwned = SmartRoutingTask.IsManagedState(state);
-                    lastTaskCheck = DateTime.UtcNow;
+                    if (!taskRefreshInProgress && DateTime.UtcNow - lastTaskCheck >= TimeSpan.FromSeconds(8))
+                    {
+                        taskRefreshInProgress = true;
+                        ThreadPool.QueueUserWorkItem(delegate {
+                            string status = SmartRoutingTask.State();
+                            lock (gate)
+                            {
+                                taskRunning = SmartRoutingTask.IsRunningState(status);
+                                taskOwned = SmartRoutingTask.IsManagedState(status);
+                                lastTaskCheck = DateTime.UtcNow;
+                                taskRefreshInProgress = false;
+                            }
+                        });
+                    }
                     return taskRunning;
                 }
             }
