@@ -86,6 +86,9 @@ if (Test-Path $Readme) { Copy-Item $Readme -Destination (Join-Path $Release "REA
 if (Test-Path $License) { Copy-Item $License -Destination (Join-Path $Release "LICENSE.md") -Force }
 Copy-Item $IconPath -Destination (Join-Path $Release "ProGo.ico") -Force
 Copy-Item $VersionFile -Destination (Join-Path $Release "VERSION") -Force
+$ReleaseDocs = Join-Path $Release "docs"
+New-Item -ItemType Directory -Path $ReleaseDocs -Force | Out-Null
+Copy-Item (Join-Path $Root "docs\SMART_ROUTING.md") -Destination (Join-Path $ReleaseDocs "SMART_ROUTING.md") -Force
 
 $ReleaseScripts = Join-Path $Release "scripts"
 New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
