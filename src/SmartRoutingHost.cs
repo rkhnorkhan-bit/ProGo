@@ -70,7 +70,11 @@ namespace ProGo
                 if (Enabled(valid)) return 21;
                 valid["SmartRoutingEnabled"] = false;
                 if (Enabled(valid)) return 22;
-                return Marshal.SizeOf(typeof(ExtendedLimit)) >= 128 ? 0 : 23;
+                if (Marshal.SizeOf(typeof(ExtendedLimit)) < 128) return 23;
+                var job = CreateIsolatedJob();
+                if (job == IntPtr.Zero) return 24;
+                CloseHandle(job);
+                return 0;
             }
             if (args != null && args.Length != 0) return 10;
             try { return Run(); }
