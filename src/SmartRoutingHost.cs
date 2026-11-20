@@ -58,6 +58,8 @@ namespace ProGo
 
         private static int Main(string[] args)
         {
+            if (args != null && args.Length == 2 && args[0] == "--validate-config")
+                return SmartRoutingPolicyValidator.Validate(args[1]) ? 0 : 25;
             if (args != null && args.Length == 1 && args[0] == "--self-check")
             {
                 // Side-effect free: creates no scheduled tasks, network adapters
@@ -222,6 +224,11 @@ namespace ProGo
                 Thread.Sleep(1800);
             }
             if (!CheckSocks(settings)) { Log("SOCKS not ready; no TUN started."); return 14; }
+            if (!SmartRoutingPolicyValidator.Validate(ConfigPath))
+            {
+                Log("Routing config rejected by privileged allowlist.");
+                return 15;
+            }
             if (!CheckConfig()) { Log("Routing configuration rejected by sing-box."); return 15; }
 
             IntPtr job = CreateIsolatedJob();
@@ -258,7 +265,9 @@ namespace ProGo
                     {
                         try { settings = ReadSettings(); }
                         catch (Exception) { break; }
-                        if (!Enabled(settings)) break;
+                        if (!Enabled(settings) ||
+                            !SmartRoutingPolicyValidator.Validate(ConfigPath))
+                            break;
                     }
                     if (!child.HasExited)
                     {
