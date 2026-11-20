@@ -92,6 +92,11 @@ namespace ProGo
             }
 
             var taskState = SmartRoutingTask.State();
+            if (String.Equals(taskState, "Waiting", StringComparison.OrdinalIgnoreCase))
+            {
+                message = "Ожидание готовности SSH/SOCKS; задача TUN уже запущена.";
+                return false;
+            }
             if (String.Equals(taskState, "INVALID", StringComparison.OrdinalIgnoreCase))
             {
                 message = "Найдена сторонняя задача ProGoSmartRouting. Она не будет запущена или остановлена ProGo.";
@@ -301,7 +306,8 @@ namespace ProGo
         public void Stop()
         {
             var state = SmartRoutingTask.State();
-            if (SmartRoutingTask.IsRunningState(state))
+            if (SmartRoutingTask.IsRunningState(state) ||
+                String.Equals(state, "Waiting", StringComparison.OrdinalIgnoreCase))
             {
                 string taskMessage;
                 if (!SmartRoutingTask.Stop(out taskMessage))
