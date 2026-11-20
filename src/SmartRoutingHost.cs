@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Web.Script.Serialization;
+using Microsoft.Win32;
 
 namespace ProGo
 {
@@ -130,6 +131,20 @@ namespace ProGo
                 (!(legacy is bool) || !(bool)legacy);
         }
 
+        private static bool IsWindowsProxyDisabled()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(
+                    @"Software\Microsoft\Windows\CurrentVersion\Internet Settings"))
+                {
+                    if (key == null) return true;
+                    return Convert.ToInt32(key.GetValue("ProxyEnable", 0)) == 0;
+                }
+            }
+            catch (Exception) { return false; }
+        }
+
         private static bool CheckSocks(IDictionary<string, object> settings)
         {
             object hostObj, portObj;
@@ -235,6 +250,12 @@ namespace ProGo
                     ReportStatus("STOPPED");
                     return 0;
                 }
+                if (!IsWindowsProxyDisabled())
+                {
+                    ReportStatus("WAITING_PROXY");
+                    Thread.Sleep(1800);
+                    continue;
+                }
                 if (CheckSocks(settings)) break;
                 ReportStatus("WAITING");
                 Thread.Sleep(1800);
@@ -282,7 +303,7 @@ namespace ProGo
                         ReportStatus("RUNNING");
                         try { settings = ReadSettings(); }
                         catch (Exception) { break; }
-                        if (!Enabled(settings) ||
+                        if (!Enabled(settings) || !IsWindowsProxyDisabled() ||
                             !SmartRoutingPolicyValidator.Validate(ConfigPath))
                             break;
                     }
