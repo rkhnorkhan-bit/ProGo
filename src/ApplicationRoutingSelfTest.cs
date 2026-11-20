@@ -28,6 +28,28 @@ namespace ProGo
             Assert(json.Contains("\"final\":\"direct\""), "safe default is direct");
             Assert(json.Contains("\"auto_detect_interface\":true"), "avoid TUN route loop");
             Assert(ApplicationRouting.NormalizePath("relative.exe") == null, "relative paths must be rejected");
+            var decision = new SmartRouteDecision();
+            Assert(!decision.Observe(false, true), "first failed direct probe must not switch");
+            Assert(decision.Observe(false, true), "two independent positive proxy checks enable routing");
+            Assert(decision.ViaProxy, "proxy route enabled");
+            Assert(!decision.Observe(false, false), "two failed routes must not change decision");
+            Assert(!decision.Observe(true, false), "first direct success requires hysteresis");
+            Assert(!decision.Observe(true, false), "second direct success requires hysteresis");
+            Assert(decision.Observe(true, false) && !decision.ViaProxy, "third direct success restores direct route");
+
+            var empty = SmartDomainPolicy.GenerateRuleSet(new string[0]);
+            Assert(empty.Contains("\"version\":1") && empty.Contains("\"rules\":[]"), "valid empty hot reload rule-set");
+            var source = SmartDomainPolicy.GenerateRuleSet(new[] { "chatgpt.com", "CHATGPT.COM" });
+            Assert(source.Contains("chatgpt.com") && !source.Contains("CHATGPT.COM"), "normalized rule set");
+            bool rejected = false;
+            try { SmartDomainPolicy.GenerateRuleSet(new[] { "127.0.0.1", "example.invalid" }); }
+            catch (InvalidOperationException) { rejected = true; }
+            Assert(rejected, "automatic monitor may not proxy arbitrary destinations");
+
+            // Manual application routing has priority over automatic domain rules.
+            var idxDirect = json.IndexOf("\"process_path\"", StringComparison.Ordinal);
+            var idxAuto = json.IndexOf("\"rule_set\":\"auto-proxy\"", StringComparison.Ordinal);
+            Assert(idxDirect >= 0 && idxAuto > idxDirect, "explicit application rules precede auto rules");
         }
 
         private static void Assert(bool condition, string message)
