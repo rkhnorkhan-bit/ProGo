@@ -132,7 +132,9 @@ namespace ProGo
             CopyFileIfExists("progo.log", backupDir);
             CopyFileIfExists("update.log", backupDir);
             CopyFileIfExists("progo-update.log", backupDir);
-            CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, "scripts"), System.IO.Path.Combine(backupDir, "scripts"));
+            foreach (var name in new[] { "scripts", "tools", "docs" })
+                CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, name),
+                    System.IO.Path.Combine(backupDir, name));
 
             WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
 
@@ -317,7 +319,7 @@ namespace ProGo
             manifest.AppendLine("created_by=" + SafeManifest(createdBy));
             manifest.AppendLine("update_result=" + SafeManifest(updateResult));
             manifest.AppendLine("backup_kind=" + SafeManifest(backupKind));
-            manifest.AppendLine("contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log,progo-update.log");
+            manifest.AppendLine("contains=ProGo.exe,ProGo.ico,VERSION,scripts,tools,docs,vault.enc.json,settings.json,progo.log,update.log,progo-update.log");
             File.WriteAllText(System.IO.Path.Combine(backupDir, "manifest.txt"), manifest.ToString(), Encoding.UTF8);
         }
 
