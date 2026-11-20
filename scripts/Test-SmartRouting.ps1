@@ -52,6 +52,17 @@ try {
     $ruleJson = Get-Content -LiteralPath $rules -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($ruleJson.version -ne 1) { throw "Unexpected rule-set format" }
 
+    $guardCheck = Start-Process -FilePath $guard -ArgumentList @("--validate-config", ('"' + $fixture + '"')) -Wait -PassThru
+    if ($guardCheck.ExitCode -ne 0) { throw "Privileged host rejected ProGo-generated routing policy" }
+
+    # Deliberately inject an unauthorized new inbound; the guard must reject it.
+    $tampered = Join-Path (Split-Path $fixture) "invalid.json"
+    $original = Get-Content -LiteralPath $fixture -Raw -Encoding UTF8
+    $bad = $original.Replace('"auto_detect_interface":true', '"auto_detect_interface":false')
+    Set-Content -LiteralPath $tampered -Value $bad -Encoding UTF8
+    $rejected = Start-Process -FilePath $guard -ArgumentList @("--validate-config", ('"' + $tampered + '"')) -Wait -PassThru
+    if ($rejected.ExitCode -eq 0) { throw "Privileged TUN host accepted a prohibited routing change" }
+
     Write-Host "Checking actual sing-box 1.14.4 config parser..."
     & $engine check -c $fixture
     if ($LASTEXITCODE -ne 0) { throw "sing-box check rejected ProGo generated routing configuration" }
