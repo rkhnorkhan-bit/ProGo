@@ -109,6 +109,7 @@ namespace ProGo
                 // The static config references this local file. It must exist
                 // before sing-box check and before any network route changes.
                 SmartDomainPolicy.SaveRuleSet(new string[0]);
+                ApplicationRouting.SaveManualRuleSets(options);
                 File.WriteAllText(pendingFile, ApplicationRouting.GenerateSingBoxConfig(options), new UTF8Encoding(false));
                 // Check before replacing the active config.
                 string checkMessage;
