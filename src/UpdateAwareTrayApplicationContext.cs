@@ -137,9 +137,17 @@ namespace ProGo
                 {
                     homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
                     automation.Update(before, settings.Current);
-                    // Apply edited process rules only after an explicit Save.
-                    StopSmartMonitor();
-                    smartRouting.Stop();
+                    // Manual app rules are local rule-sets: no TUN restart or
+                    // interruption of running games for ordinary edits.
+                    bool transportChanged = before.SocksPort != settings.Current.SocksPort ||
+                        before.SocksHost != settings.Current.SocksHost ||
+                        before.SshProfile != settings.Current.SshProfile;
+                    bool modeChanged = before.SmartRoutingEnabled != settings.Current.SmartRoutingEnabled;
+                    if (transportChanged || modeChanged)
+                    {
+                        StopSmartMonitor();
+                        smartRouting.Stop();
+                    }
                     if (settings.Current.SmartRoutingEnabled)
                     {
                         DisableCli();
@@ -148,6 +156,13 @@ namespace ProGo
                             string restoreMessage;
                             if (!SystemProxyService.Restore(out restoreMessage))
                                 SafeLog.Error("Legacy Windows proxy restore failed.", new InvalidOperationException(restoreMessage));
+                        }
+                        try { ApplicationRouting.SaveManualRuleSets(settings.Current); }
+                        catch (Exception ex) { SafeLog.Error("Manual routing rule refresh failed.", ex); }
+                        if (smartRouting.IsActive && before.HttpProxyPort != settings.Current.HttpProxyPort)
+                        {
+                            StopSmartMonitor();
+                            StartSmartMonitor();
                         }
                     }
                     smartFailures = 0;
