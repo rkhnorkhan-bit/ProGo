@@ -40,6 +40,11 @@ jobs:
             throw
           }
 
+      - name: Validate generated TUN config with verified sing-box
+        shell: powershell
+        run: |
+          .\scripts\Test-SmartRouting.ps1
+
       - name: Set up Python for relay tests
         uses: actions/setup-python@v5
         with:
