@@ -297,8 +297,13 @@ namespace ProGo
         }
         private void EnableFeature(ProxyFeature feature)
         {
-            if (feature == ProxyFeature.Windows && (settings.Current.SmartRoutingEnabled || smartRouting.IsActive))
-                throw new InvalidOperationException("Системный HTTP-прокси Windows несовместим с режимом TUN. Используйте маршрутизацию приложений.");
+            if (settings.Current.SmartRoutingEnabled || smartRouting.IsActive)
+            {
+                if (feature == ProxyFeature.Windows)
+                    throw new InvalidOperationException("Системный HTTP-прокси Windows несовместим с TUN. Используйте вкладку «Приложения».");
+                if (feature == ProxyFeature.Terminal || feature == ProxyFeature.Codex)
+                    throw new InvalidOperationException("Глобальные HTTP_PROXY/HTTPS_PROXY для терминалов отключены в TUN-режиме. Для Codex выберите маршрут «VPS» во вкладке «Приложения».");
+            }
             EnsureBridge();
             if (feature == ProxyFeature.Terminal) CliProxyEnvironmentService.ApplyUserEnvironment(cliProxy.Port);
             else if (feature == ProxyFeature.Codex) CodexProxyService.EnableOrdinaryLaunch(cliProxy.Port);
