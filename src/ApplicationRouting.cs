@@ -151,42 +151,52 @@ namespace ProGo
             };
         }
 
-        // sing-box 1.14.4: strict rule order, manual app rules precede auto domains.
-        // Local rule-set files hot-reload on change without a TUN restart.
-        internal static string GenerateSingBoxConfig(AppSettings settings, string ruleSetPath = null)
+        internal static string ManualDirectPath
         {
-            if (String.IsNullOrWhiteSpace(ruleSetPath)) ruleSetPath = SmartDomainPolicy.RuleSetPath;
+            get { return Path.Combine(AppPaths.Root, "smart-routing", "manual-direct.json"); }
+        }
+        internal static string ManualProxyPath
+        {
+            get { return Path.Combine(AppPaths.Root, "smart-routing", "manual-proxy.json"); }
+        }
+
+        internal static string GenerateApplicationRuleSet(AppSettings settings, string mode)
+        {
+            var paths = Normalize(settings == null ? null : settings.ApplicationRoutes)
+                .Where(r => r.Mode == mode).Select(r => r.ExecutablePath)
+                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToArray();
+            var rules = paths.Length == 0 ? new object[0] :
+                new object[] { new { process_path = paths } };
+            return new JavaScriptSerializer().Serialize(new { version = 1, rules });
+        }
+
+        internal static void SaveManualRuleSets(AppSettings settings)
+        {
+            SmartDomainPolicy.WriteAtomic(ManualDirectPath, GenerateApplicationRuleSet(settings, Direct));
+            SmartDomainPolicy.WriteAtomic(ManualProxyPath, GenerateApplicationRuleSet(settings, Proxy));
+        }
+
+        // sing-box 1.14.4: strict rule order, manual app rules precede auto domains.
+        // Local files hot-reload without dropping active TCP sessions.
+        internal static string GenerateSingBoxConfig(AppSettings settings, string autoRuleSet = null,
+            string manualDirectRuleSet = null, string manualProxyRuleSet = null)
+        {
             if (settings == null) throw new ArgumentNullException("settings");
-            var rules = Normalize(settings.ApplicationRoutes);
+            if (String.IsNullOrWhiteSpace(autoRuleSet)) autoRuleSet = SmartDomainPolicy.RuleSetPath;
+            if (String.IsNullOrWhiteSpace(manualDirectRuleSet)) manualDirectRuleSet = ManualDirectPath;
+            if (String.IsNullOrWhiteSpace(manualProxyRuleSet)) manualProxyRuleSet = ManualProxyPath;
+
             var routing = new List<object>();
             routing.Add(new { action = "sniff" });
             routing.Add(new { protocol = "dns", action = "hijack-dns" });
             routing.Add(new { ip_is_private = true, action = "route", outbound = Direct });
-            // Never route ProGo's own connectivity probes or transport via its TUN.
             routing.Add(new { process_path = new[] { Application.ExecutablePath },
                               action = "route", outbound = Direct });
-
-            var directApps = rules.Where(x => x.Mode == Direct).Select(x => x.ExecutablePath).ToArray();
-            var proxyApps = rules.Where(x => x.Mode == Proxy).Select(x => x.ExecutablePath).ToArray();
-            if (directApps.Length != 0)
-                routing.Add(new { process_path = directApps, action = "route", outbound = Direct });
-            if (proxyApps.Length != 0)
-            {
-                // The existing SSH -D supports TCP only. Deny UDP for explicit
-                // proxy applications instead of silently sending it directly.
-                routing.Add(new { process_path = proxyApps, network = "udp", action = "reject" });
-                routing.Add(new { process_path = proxyApps, network = "tcp", action = "route", outbound = Proxy });
-            }
-
-            // Never automatically proxy Windows certificate-revocation endpoints
-            // or Blizzard games. Explicit application choices above can override
-            // Blizzard's default, but not the Windows trust-store safety boundary.
-            routing.Add(new { domain_suffix = new[] { "lencr.org" }, action = "route", outbound = Direct });
-            routing.Add(new { domain_suffix = new[] { "battle.net", "blizzard.com" },
+            routing.Add(new { rule_set = "manual-direct", action = "route", outbound = Direct });
+            routing.Add(new { rule_set = "manual-proxy", network = "udp", action = "reject" });
+            routing.Add(new { rule_set = "manual-proxy", network = "tcp", action = "route", outbound = Proxy });
+            routing.Add(new { domain_suffix = new[] { "lencr.org", "battle.net", "blizzard.com" },
                               action = "route", outbound = Direct });
-
-            // Only known monitored service groups can enter this rule set. A
-            // transient failure or HTTP 4xx is not sufficient evidence.
             routing.Add(new { rule_set = "auto-proxy", network = "udp", action = "reject" });
             routing.Add(new { rule_set = "auto-proxy", network = "tcp", action = "route", outbound = Proxy });
 
@@ -199,7 +209,7 @@ namespace ProGo
                         type = "tun", tag = "progo-tun", interface_name = "ProGoTUN",
                         address = new[] { "172.25.248.1/30", "fdfe:dcba:9876::1/126" },
                         auto_route = true, dns_mode = "hijack",
-                        strict_route = false // Hyper-V/WSL acceptance still required.
+                        strict_route = false
                     }
                 } },
                 { "outbounds", new object[] {
@@ -211,7 +221,11 @@ namespace ProGo
                 } },
                 { "route", new {
                     auto_detect_interface = true,
-                    rule_set = new object[] { new { type = "local", tag = "auto-proxy", format = "source", path = ruleSetPath } },
+                    rule_set = new object[] {
+                        new { type = "local", tag = "manual-direct", format = "source", path = manualDirectRuleSet },
+                        new { type = "local", tag = "manual-proxy", format = "source", path = manualProxyRuleSet },
+                        new { type = "local", tag = "auto-proxy", format = "source", path = autoRuleSet }
+                    },
                     rules = routing,
                     final = Direct
                 } }
