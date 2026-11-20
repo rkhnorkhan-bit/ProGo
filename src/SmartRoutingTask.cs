@@ -5,8 +5,8 @@ using System.Text;
 
 namespace ProGo
 {
-    // The optional scheduled task runs ONLY the official, hash-pinned sing-box
-    // executable from protected Program Files. The main ProGo UI stays unelevated.
+    // The optional task runs a protected settings-aware guard, which verifies
+    // the official hash-pinned sing-box and owns the entire TUN process tree.
     internal static class SmartRoutingTask
     {
         internal const string TaskName = "ProGoSmartRouting";
@@ -31,7 +31,7 @@ namespace ProGo
                 "' -ErrorAction SilentlyContinue; if($null -eq $t){'MISSING'}" +
                 " elseif(@($t.Actions).Count -ne 1){'INVALID'}" +
                 " elseif($t.Actions[0].Execute -ine '" + expectedExe +
-                "' -or $t.Actions[0].Arguments -cne '" + expectedArgs + "'){'INVALID'}" +
+                "' -or [string]$t.Actions[0].Arguments -cne '" + expectedArgs + "'){'INVALID'}" +
                 " else {$t.State.ToString()}";
             var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
             var psi = new ProcessStartInfo("powershell.exe", "-NoProfile -NonInteractive -EncodedCommand " + encoded)
