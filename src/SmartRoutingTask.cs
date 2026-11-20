@@ -15,14 +15,18 @@ namespace ProGo
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
                 "ProGoRoutingEngine", "sing-box.exe"); }
         }
+        internal static string ProtectedHostPath
+        {
+            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                "ProGoRoutingEngine", "ProGoSmartRoutingHost.exe"); }
+        }
 
         internal static string State()
         {
             // Query the user's own fixed task through the built-in Windows module.
             // Validate action and argument before treating it as ProGo-owned.
-            var expectedExe = ProtectedEnginePath.Replace("'", "''");
-            var expectedArgs = ("run -c \"" + Path.Combine(AppPaths.Root, "smart-routing", "active.json") + "\"")
-                .Replace("'", "''");
+            var expectedExe = ProtectedHostPath.Replace("'", "''");
+            var expectedArgs = String.Empty;
             var script = "$t=Get-ScheduledTask -TaskName '" + TaskName +
                 "' -ErrorAction SilentlyContinue; if($null -eq $t){'MISSING'}" +
                 " elseif(@($t.Actions).Count -ne 1){'INVALID'}" +
