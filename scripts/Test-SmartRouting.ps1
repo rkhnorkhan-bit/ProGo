@@ -28,8 +28,8 @@ try {
     & $engine version
     if ($LASTEXITCODE -ne 0) { throw "Cannot run signed-release sing-box executable" }
 
-    & $exeProGo --dump-routing-fixture
-    if ($LASTEXITCODE -ne 0) { throw "ProGo fixture export failed" }
+    $fixtureProcess = Start-Process -FilePath $exeProGo -ArgumentList "--dump-routing-fixture" -Wait -PassThru
+    if ($fixtureProcess.ExitCode -ne 0) { throw "ProGo fixture export failed with exit code $($fixtureProcess.ExitCode)" }
     $fixture = Join-Path $env:TEMP "ProGo-Routing-Fixture\active.json"
     $rules = Join-Path $env:TEMP "ProGo-Routing-Fixture\auto-proxy.json"
     $manualDirect = Join-Path $env:TEMP "ProGo-Routing-Fixture\manual-direct.json"
