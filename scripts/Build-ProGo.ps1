@@ -121,7 +121,8 @@ $HostArgs = @(
     "/nologo", "/target:exe", "/optimize+", "/codepage:65001", "/utf8output",
     "/out:$HostOut", "/reference:System.dll", "/reference:System.Core.dll",
     "/reference:System.Web.Extensions.dll",
-    (Join-Path $Src "SmartRoutingHost.cs")
+    (Join-Path $Src "SmartRoutingHost.cs"),
+    (Join-Path $Src "SmartRoutingPolicyValidator.cs")
 )
 & $Csc @HostArgs
 if ($LASTEXITCODE -ne 0) { throw "Smart Routing Host build failed: $LASTEXITCODE" }
