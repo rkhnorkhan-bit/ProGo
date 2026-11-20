@@ -35,12 +35,12 @@ namespace ProGo
                 ColumnCount = 1, RowCount = 7, BackColor = UiTheme.Background
             };
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
             Controls.Add(layout);
 
             var heading = UiTheme.Label("Правила приложений — Авто / VPS / Прямо", UiTheme.Strong, UiTheme.Text);
@@ -48,7 +48,9 @@ namespace ProGo
             layout.Controls.Add(heading, 0, 0);
 
             var description = UiTheme.Label("Авто: проверяемые сервисы (OpenAI, GitHub, Claude) переключаются после повторных проверок. Остальные — напрямую. VPS: TCP через SSH; UDP запрещён. Ручные правила важнее авто.", UiTheme.Body, UiTheme.Muted);
+            description.AutoSize = false;
             description.Dock = DockStyle.Fill;
+            description.TextAlign = ContentAlignment.MiddleLeft;
             layout.Controls.Add(description, 0, 1);
 
             search.Dock = DockStyle.Fill;
@@ -67,7 +69,7 @@ namespace ProGo
             table.MultiSelect = false;
             table.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             table.RowHeadersVisible = false;
-            table.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            table.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
             table.BackgroundColor = UiTheme.Background;
             table.ForeColor = UiTheme.Text;
             table.GridColor = UiTheme.Muted;
@@ -80,13 +82,19 @@ namespace ProGo
             table.DefaultCellStyle.SelectionBackColor = UiTheme.Field;
             table.DefaultCellStyle.SelectionForeColor = UiTheme.Text;
             table.Columns.Add(new DataGridViewTextBoxColumn {
-                HeaderText = "Программа", ReadOnly = true, FillWeight = 32
+                HeaderText = "Программа", ReadOnly = true,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+                FillWeight = 36, MinimumWidth = 170
             });
             table.Columns.Add(new DataGridViewTextBoxColumn {
-                HeaderText = "Путь к .exe", ReadOnly = true, FillWeight = 55
+                HeaderText = "Путь к .exe", ReadOnly = true,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+                FillWeight = 64, MinimumWidth = 210
             });
             var modeColumn = new DataGridViewComboBoxColumn {
-                HeaderText = "Маршрут", FillWeight = 22, FlatStyle = FlatStyle.Flat
+                HeaderText = "Маршрут", Width = 150, MinimumWidth = 150,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
+                FlatStyle = FlatStyle.Flat
             };
             modeColumn.Items.AddRange("Авто", "VPS", "Прямо");
             table.Columns.Add(modeColumn);
@@ -119,9 +127,11 @@ namespace ProGo
             enabled.Text = "Умная маршрутизация при запуске ProGo (первоначальная настройка требует UAC)";
             enabled.AutoSize = true;
             footer.Controls.Add(enabled);
-            hint.Text = "Для запуска без прав администратора установите защищённую задачу из scripts/Install-SmartRoutingEngine.ps1. Глобальный HTTP-прокси должен быть выключен.";
+            hint.Text = "Для автоматического TUN один раз выполните scripts/Install-SmartRoutingEngine.ps1 от администратора. Глобальный HTTP-прокси Windows должен быть выключен.";
             hint.ForeColor = UiTheme.Muted;
-            hint.AutoSize = true;
+            hint.AutoSize = false;
+            hint.Width = 750;
+            hint.Height = 44;
             footer.Controls.Add(hint);
             layout.Controls.Add(footer, 0, 6);
         }
