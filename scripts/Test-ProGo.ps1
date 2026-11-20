@@ -235,7 +235,7 @@ foreach ($required in @(
     if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Install-SmartRoutingEngine.ps1", "Test-SmartRouting.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
