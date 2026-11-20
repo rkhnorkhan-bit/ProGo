@@ -16,10 +16,12 @@ if (-not $admin.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Adminis
 $name = "ProGoSmartRouting"
 $dir = Join-Path $env:ProgramFiles "ProGoRoutingEngine"
 $exe = Join-Path $dir "sing-box.exe"
+$hostPath = Join-Path $dir "ProGoSmartRoutingHost.exe"
+$hostSource = Join-Path $env:LOCALAPPDATA "ProGo\tools\ProGoSmartRoutingHost.exe"
 $startupMarker = Join-Path $dir "autostart-owned.txt"
 $run = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
 $config = Join-Path $env:LOCALAPPDATA "ProGo\smart-routing\active.json"
-$argsLine = 'run -c "' + $config + '"'
+$argsLine = ""
 $progo = Join-Path $env:LOCALAPPDATA "ProGo\ProGo.exe"
 $version = "1.14.4"
 $assetSha = "99185d75d314a07dbba4a130c8ad986cbeb629a07927975636b341ca61f991df"
@@ -29,7 +31,7 @@ $uri = "https://github.com/SagerNet/sing-box/releases/download/v$version/sing-bo
 function Assert-TaskOwnership {
     $existing = Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
     if ($null -eq $existing) { return $null }
-    if (@($existing.Actions).Count -ne 1 -or $existing.Actions[0].Execute -ine $exe -or $existing.Actions[0].Arguments -cne $argsLine) {
+    if (@($existing.Actions).Count -ne 1 -or $existing.Actions[0].Execute -ine $hostPath -or [string]$existing.Actions[0].Arguments -cne $argsLine) {
         throw "Another task named $name exists. Nothing changed."
     }
     return $existing
@@ -61,6 +63,9 @@ if (-not (Test-Path $progo)) {
 if (-not (Test-Path $config)) {
     throw "No Smart Routing config. Enable Smart Routing, save and start ProGo before installing the task."
 }
+if (-not (Test-Path $hostSource)) {
+    throw "ProGoSmartRoutingHost.exe not found in the installed release. Update ProGo first."
+}
 $progoSettings = Get-Content (Join-Path $env:LOCALAPPDATA "ProGo\settings.json") -Encoding UTF8 -Raw | ConvertFrom-Json
 if (-not $progoSettings.SmartRoutingEnabled -or $progoSettings.AutoSystemProxy) {
     throw "Enable SmartRoutingEnabled and disable legacy AutoSystemProxy in ProGo before installing the task."
@@ -82,6 +87,10 @@ try {
     if ($null -ne $existing) { Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
     Copy-Item -LiteralPath $candidates[0].FullName -Destination $exe -Force
+    Copy-Item -LiteralPath $hostSource -Destination $hostPath -Force
+    if ((Get-FileHash $hostSource -Algorithm SHA256).Hash -ne (Get-FileHash $hostPath -Algorithm SHA256).Hash) {
+        throw "TUN guard checksum changed during protected copy."
+    }
     if ((Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant() -ne $engineSha) {
         throw "Protected executable checksum mismatch."
     }
@@ -93,14 +102,16 @@ try {
 
     & $exe check -c $config
     if ($LASTEXITCODE -ne 0) { throw "sing-box check rejected live config; task was not registered." }
+    & $hostPath --self-check
+    if ($LASTEXITCODE -ne 0) { throw "Protected TUN host self-check failed." }
 
     $userId = $id.Name
-    $action = New-ScheduledTaskAction -Execute $exe -Argument $argsLine -WorkingDirectory (Split-Path $config)
+    $action = New-ScheduledTaskAction -Execute $hostPath -WorkingDirectory (Split-Path $config)
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User $userId
     $trigger.Delay = "PT45S"
     $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Highest
     $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval ([TimeSpan]::FromMinutes(1)) -MultipleInstances IgnoreNew -StartWhenAvailable
-    Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description "ProGo Smart Routing TUN; SHA-256 verified sing-box 1.14.4" -Force | Out-Null
+    Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description "ProGo Smart Routing supervised TUN; SHA-256 verified sing-box 1.14.4" -Force | Out-Null
 
     # Preserve pre-existing user startup commands and only install our own
     # startup entry when none exists. An ownership marker enables safe removal.
