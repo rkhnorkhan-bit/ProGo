@@ -110,8 +110,11 @@ namespace ProGo
 
         internal static void SaveRuleSet(IEnumerable<string> suffixes)
         {
-            var next = GenerateRuleSet(suffixes);
-            var path = RuleSetPath;
+            WriteAtomic(RuleSetPath, GenerateRuleSet(suffixes));
+        }
+
+        internal static void WriteAtomic(string path, string next)
+        {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             if (File.Exists(path) && String.Equals(File.ReadAllText(path), next, StringComparison.Ordinal)) return;
             var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
