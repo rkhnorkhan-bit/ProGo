@@ -21,6 +21,7 @@ namespace ProGo
         private readonly CheckBox autoRestart = new CheckBox();
         private readonly CheckBox autoWindows = new CheckBox();
         private readonly CheckBox autoCodex = new CheckBox();
+        private readonly ApplicationRoutingEditor appRouting = new ApplicationRoutingEditor();
         public event Action<string> ManualActionRequested;
         public Func<AppSettings, bool, string> SaveRequested;
         private readonly CheckBox autoHttpPort = new CheckBox();
@@ -44,7 +45,7 @@ namespace ProGo
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
             root.Controls.Add(UiTheme.Label("Под ваш ритм", UiTheme.Title, UiTheme.Text), 0, 0);
             root.Controls.Add(UiTheme.Label("Автоматика, подключения и личные настройки — в одном месте.", UiTheme.Body, UiTheme.Muted), 0, 1);
-            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed };
+            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(130, 38), SizeMode = TabSizeMode.Fixed };
             root.Controls.Add(tabs, 0, 2); settingsTabs = tabs;
             var automation = Page(tabs, "Автоматика");
             var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
@@ -115,6 +116,7 @@ namespace ProGo
             appPorts.Controls.Add(portHelp, 0, 4); appPorts.SetColumnSpan(portHelp, 2);
             portNotice.MaximumSize = new Size(740, 0);
             appPorts.Controls.Add(portNotice, 0, 5); appPorts.SetColumnSpan(portNotice, 2);
+            Page(tabs, "Приложения").Controls.Add(appRouting);
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 12, 0, 0) };
             var save = UiTheme.Button("Сохранить", Save, true);
             var cancel = UiTheme.Button("Отмена", null, false); cancel.DialogResult = DialogResult.Cancel;
@@ -164,6 +166,7 @@ namespace ProGo
             autoRestart.Checked = s.AutoRestartSocks;
             autoWindows.Checked = s.AutoSystemProxy;
             autoCodex.Checked = s.AutoCodexProxy;
+            appRouting.LoadSettings(s);
             clearSeconds.Value = s.ClipboardClearSeconds;
             endpoint.Text = s.TestEndpoint;
 
@@ -286,6 +289,21 @@ namespace ProGo
 
         private void Save(object sender, EventArgs e)
         {
+            if (appRouting.SmartRoutingEnabled && (autoWindows.Checked || autoProxy.Checked || autoCodex.Checked))
+            {
+                var answer = MessageBox.Show(
+                    "Для маршрутизации по приложениям нужно выключить глобальный прокси Windows и переменные HTTP_PROXY/HTTPS_PROXY. Существующее SSH/SOCKS-подключение останется. Чтобы Codex работал через VPS, задайте ему правило «VPS» на вкладке «Приложения».\n\nОтключить старые автоматические прокси и сохранить TUN-режим?",
+                    "Переключение на Smart Routing", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (answer != DialogResult.Yes)
+                {
+                    DialogResult = DialogResult.None;
+                    settingsTabs.SelectedIndex = 5;
+                    return;
+                }
+                autoWindows.Checked = false;
+                autoProxy.Checked = false;
+                autoCodex.Checked = false;
+            }
             var selected = SelectedProfile();
             var selectedTarget = selected == null ? String.Empty : selected.Target;
             var proposed = new AppSettings
@@ -302,6 +320,9 @@ namespace ProGo
                 AutoSystemProxy = autoWindows.Checked,
                 AutoCodexProxy = autoCodex.Checked,
                 AutoApplyProxy = autoProxy.Checked,
+                SmartRoutingEnabled = appRouting.SmartRoutingEnabled,
+                SmartRoutingEnginePath = appRouting.EnginePath,
+                ApplicationRoutes = appRouting.GetRules(),
                 ClipboardClearSeconds = (int)clearSeconds.Value,
                 TestEndpoint = endpoint.Text.Trim()
             };

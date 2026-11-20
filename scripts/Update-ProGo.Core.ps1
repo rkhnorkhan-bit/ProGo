@@ -330,7 +330,10 @@ function Backup-InstalledState {
         try { Copy-FileIfExists $InstallDir $name $backupDir $false } catch { Write-UpdateLog "Backup warning for ${name}: $($_.Exception.Message)" }
     }
 
-    try { Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false } catch { Write-UpdateLog "Backup warning for scripts: $($_.Exception.Message)" }
+    foreach ($extra in @("scripts", "tools", "docs")) {
+        try { Copy-DirectoryIfExists $InstallDir $extra $backupDir $false }
+        catch { Write-UpdateLog "Backup warning for ${extra}: $($_.Exception.Message)" }
+    }
 
     $manifest = @(
         "product=ProGo",
@@ -341,7 +344,7 @@ function Backup-InstalledState {
         "backup_kind=pre-update",
         "update_result=pending",
         "reason=before-transactional-update",
-        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log",
+        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,tools,docs,vault.enc.json,settings.json,progo.log,update.log",
         "update_mode=$($State.UpdateMode)"
     )
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
@@ -387,7 +390,9 @@ function New-StagingCopy($TargetDir) {
         Copy-FileIfExists $InstallDir $name $TargetDir $false
     }
 
-    Copy-DirectoryIfExists $InstallDir "scripts" $TargetDir $false
+    foreach ($extra in @("scripts", "tools", "docs")) {
+        Copy-DirectoryIfExists $InstallDir $extra $TargetDir $false
+    }
 }
 
 function Apply-ReleaseToStaging($ReleaseDir, $TargetDir) {
@@ -397,6 +402,8 @@ function Apply-ReleaseToStaging($ReleaseDir, $TargetDir) {
     }
 
     Copy-DirectoryIfExists $ReleaseDir "scripts" $TargetDir $true
+    Copy-DirectoryIfExists $ReleaseDir "tools" $TargetDir $true
+    Copy-DirectoryIfExists $ReleaseDir "docs" $TargetDir $false
 }
 
 function Test-StagingCopy($TargetDir) {
@@ -406,6 +413,11 @@ function Test-StagingCopy($TargetDir) {
         $path = Join-Path $TargetDir $name
         if (-not (Test-Path $path)) { Fail "Staging validation failed. Missing: $path" }
     }
+
+    $guardExe = Join-Path $TargetDir "tools\ProGoSmartRoutingHost.exe"
+    if (-not (Test-Path $guardExe)) { Fail "Staging validation failed: protected TUN host missing." }
+    $guardCheck = Start-Process -FilePath $guardExe -ArgumentList "--self-check" -WorkingDirectory $TargetDir -PassThru -Wait
+    if ($guardCheck.ExitCode -ne 0) { Fail "Staging protected guard self-check failed." }
 
     $stageVersion = ((Get-Content -Raw -Path (Join-Path $TargetDir "VERSION")).Trim())
     if ($stageVersion -ne $State.RemoteVersion) {
@@ -430,6 +442,8 @@ function Install-StagingToMain($TargetDir) {
     }
 
     Copy-DirectoryIfExists $TargetDir "scripts" $InstallDir $true
+    Copy-DirectoryIfExists $TargetDir "tools" $InstallDir $true
+    Copy-DirectoryIfExists $TargetDir "docs" $InstallDir $false
 }
 
 function Restore-BackupToMain($SourceBackupDir) {
@@ -444,7 +458,10 @@ function Restore-BackupToMain($SourceBackupDir) {
         try { Copy-FileIfExists $SourceBackupDir $name $InstallDir $false } catch { Write-UpdateLog "Rollback warning for ${name}: $($_.Exception.Message)" }
     }
 
-    try { Copy-DirectoryIfExists $SourceBackupDir "scripts" $InstallDir $false } catch { Write-UpdateLog "Rollback warning for scripts: $($_.Exception.Message)" }
+    foreach ($extra in @("scripts", "tools", "docs")) {
+        try { Copy-DirectoryIfExists $SourceBackupDir $extra $InstallDir $false }
+        catch { Write-UpdateLog "Rollback warning for ${extra}: $($_.Exception.Message)" }
+    }
 }
 
 function Find-ReleaseDirInExtractedPackage($Root) {

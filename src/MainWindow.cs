@@ -10,13 +10,15 @@ namespace ProGo
         private readonly ProxyService proxy;
         private readonly HomeVpnService home;
         private readonly CliProxyBridgeService appProxy;
+        private readonly SmartRoutingEngine smartRouting;
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
-        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null)
+        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null, SmartRoutingEngine smartRouting = null)
         {
             this.appProxy = appProxy;
+            this.smartRouting = smartRouting;
             this.settings = settings; this.proxy = proxy; this.home = home;
             Text = "ProGo · Ваше подключение"; ClientSize = new Size(1040, 710); MinimumSize = new Size(970, 680);
             var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
@@ -92,7 +94,9 @@ namespace ProGo
             connection.ForeColor = ready ? UiTheme.Accent : UiTheme.Text;
             subtitle.Text = String.IsNullOrWhiteSpace(settings.Current.SshProfile) ? "Добавьте сервер в настройках, чтобы начать." : "Сервер: " + settings.Current.SshProfile;
             connect.Text = ready ? "Переподключиться" : "Подключиться";
-            windowsState.Text = SystemProxyService.IsApplied(settings.Current) ? "Включено" : "Выключено";
+            windowsState.Text = settings.Current.SmartRoutingEnabled
+                ? (smartRouting != null && smartRouting.IsActive ? "TUN активен" : "TUN ожидает")
+                : (SystemProxyService.IsApplied(settings.Current) ? "Включено" : "Выключено");
             terminalState.Text = CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) ? "Включено" : "Выключено";
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +

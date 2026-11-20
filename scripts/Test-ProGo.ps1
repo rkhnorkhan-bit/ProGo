@@ -235,7 +235,7 @@ foreach ($required in @(
     if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Install-SmartRoutingEngine.ps1", "Test-SmartRouting.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
@@ -250,6 +250,8 @@ foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.
 & $Build
 $Exe = Join-Path $Root "release\ProGo.exe"
 if (-not (Test-Path $Exe)) { Fail "release ProGo.exe missing" }
+$checkProcess = Start-Process -FilePath $Exe -ArgumentList "--self-check" -PassThru -Wait
+if ($checkProcess.ExitCode -ne 0) { Fail "Routing model and application self-check failed: $($checkProcess.ExitCode)" }
 $ReleaseIcon = Join-Path $Root "release\ProGo.ico"
 if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
@@ -277,7 +279,7 @@ foreach ($relativePath in @(
 
 $RecoveryHarness = Join-Path $Root "build\SocksRecoveryTests.exe"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\ApplicationRouting.cs") (Join-Path $Root "src\SmartDomainPolicy.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }

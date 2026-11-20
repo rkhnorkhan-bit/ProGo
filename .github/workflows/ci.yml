@@ -10,6 +10,10 @@ permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: progo-ci-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   vpn-server-test:
     runs-on: ubuntu-24.04
@@ -39,6 +43,11 @@ jobs:
             $_ | Out-String | Tee-Object -FilePath ci-output.txt -Append
             throw
           }
+
+      - name: Validate generated TUN config with verified sing-box
+        shell: powershell
+        run: |
+          .\scripts\Test-SmartRouting.ps1
 
       - name: Set up Python for relay tests
         uses: actions/setup-python@v5

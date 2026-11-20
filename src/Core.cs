@@ -68,6 +68,9 @@ namespace ProGo
         public bool AutoApplyProxy { get; set; }
         public bool AutoSystemProxy { get; set; }
         public bool AutoCodexProxy { get; set; }
+        public bool SmartRoutingEnabled { get; set; }
+        public string SmartRoutingEnginePath { get; set; }
+        public List<ApplicationRouteRule> ApplicationRoutes { get; set; }
         public int ClipboardClearSeconds { get; set; }
         public string TestEndpoint { get; set; }
 
@@ -77,6 +80,7 @@ namespace ProGo
             AutoRestartSocks = true;
             HttpProxyPort = 1881;
             AutoHttpProxyPort = true;
+            ApplicationRoutes = new List<ApplicationRouteRule>();
         }
 
         public AppSettings Clone()
@@ -96,6 +100,8 @@ namespace ProGo
                 AutoStartSocks = false,
                 AutoRestartSocks = true,
                 AutoApplyProxy = false,
+                SmartRoutingEnabled = false,
+                ApplicationRoutes = new List<ApplicationRouteRule>(),
                 ClipboardClearSeconds = 30,
                 TestEndpoint = "https://api.openai.com/v1/models"
             };
@@ -161,6 +167,8 @@ namespace ProGo
             if (String.IsNullOrWhiteSpace(settings.TestEndpoint)) settings.TestEndpoint = "https://api.openai.com/v1/models";
             if (settings.SshProfile == null) settings.SshProfile = String.Empty;
             NormalizeProfiles(settings);
+            settings.ApplicationRoutes = ApplicationRouting.Normalize(settings.ApplicationRoutes);
+            if (settings.SmartRoutingEnginePath == null) settings.SmartRoutingEnginePath = String.Empty;
         }
 
         private static void NormalizeProfiles(AppSettings settings)

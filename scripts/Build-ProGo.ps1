@@ -60,6 +60,7 @@ $Sources += $VersionSource
 $Args = @(
     "/nologo",
     "/target:winexe",
+    "/main:ProGo.Program",
     "/optimize+",
     "/codepage:65001",
     "/utf8output",
@@ -86,12 +87,15 @@ if (Test-Path $Readme) { Copy-Item $Readme -Destination (Join-Path $Release "REA
 if (Test-Path $License) { Copy-Item $License -Destination (Join-Path $Release "LICENSE.md") -Force }
 Copy-Item $IconPath -Destination (Join-Path $Release "ProGo.ico") -Force
 Copy-Item $VersionFile -Destination (Join-Path $Release "VERSION") -Force
+$ReleaseDocs = Join-Path $Release "docs"
+New-Item -ItemType Directory -Path $ReleaseDocs -Force | Out-Null
+Copy-Item (Join-Path $Root "docs\SMART_ROUTING.md") -Destination (Join-Path $ReleaseDocs "SMART_ROUTING.md") -Force
 
 $ReleaseScripts = Join-Path $Release "scripts"
 New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is bootstrap-only. Do not include it in the runtime release:
 # some endpoint protection tools block downloaded bootstrap installers during self-update builds.
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Install-SmartRoutingEngine.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $ReleaseScripts $scriptName) -Force
@@ -108,7 +112,23 @@ foreach ($serverFile in @("ikev2_relay.py", "install-ikev2-relay.sh", "make_home
     Copy-Item (Join-Path $Root ("server\" + $serverFile)) -Destination (Join-Path $HomeVpnServer $serverFile) -Force
 }
 
+# The privilege boundary is a separate, console-only host. Only this binary,
+# never the normal ProGo UI, is installed as the scheduled elevated action.
+$ToolsRelease = Join-Path $Release "tools"
+New-Item -ItemType Directory -Path $ToolsRelease -Force | Out-Null
+$HostOut = Join-Path $ToolsRelease "ProGoSmartRoutingHost.exe"
+$HostArgs = @(
+    "/nologo", "/target:exe", "/optimize+", "/codepage:65001", "/utf8output",
+    "/out:$HostOut", "/reference:System.dll", "/reference:System.Core.dll",
+    "/reference:System.Web.Extensions.dll",
+    (Join-Path $Src "SmartRoutingHost.cs"),
+    (Join-Path $Src "SmartRoutingPolicyValidator.cs")
+)
+& $Csc @HostArgs
+if ($LASTEXITCODE -ne 0) { throw "Smart Routing Host build failed: $LASTEXITCODE" }
+
 Write-Host "Build OK: $Out"
+Write-Host "Protected host build OK: $HostOut"
 Write-Host "Icon OK: $IconPath"
 Write-Host "Version OK: $((Get-Content -Raw -Path $VersionFile).Trim())"
 Write-Host "Release folder: $Release"

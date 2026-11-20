@@ -12,6 +12,11 @@ namespace ProGo
         private readonly CliProxyBridgeService cliProxy;
         private readonly HomeVpnService homeVpn;
         private readonly ClipboardService clipboard;
+        private readonly SmartRoutingEngine smartRouting;
+        private SmartRouteMonitor smartMonitor;
+        private int smartFailures;
+        private DateTime nextSmartAttempt = DateTime.MinValue;
+        private bool smartSuppressed;
         private readonly NotifyIcon tray;
         private readonly System.Drawing.Icon icon;
         private Timer startupShowTimer;
@@ -23,6 +28,7 @@ namespace ProGo
             cliProxy = cliProxyService;
             homeVpn = homeVpnService;
             clipboard = clipboardService;
+            smartRouting = new SmartRoutingEngine(settings, proxy);
             icon = BrandIcon.Create();
 
             tray = new NotifyIcon
@@ -64,6 +70,11 @@ namespace ProGo
             Item(connection, "Переподключиться", "restart");
             Item(connection, "Проверить маршрут и скорость", "diagnostics");
             menu.Items.Add(connection);
+            var routing = new ToolStripMenuItem("Умная маршрутизация");
+            Item(routing, "Запустить TUN", "smart-on");
+            Item(routing, "Остановить TUN", "smart-off");
+            Item(routing, "Настроить приложения…", "settings");
+            menu.Items.Add(routing);
             var apps = new ToolStripMenuItem("Прокси для приложений");
             Item(apps, "Windows — включить", "windows-on"); Item(apps, "Windows — выключить", "windows-off");
             apps.DropDownItems.Add(new ToolStripSeparator());
@@ -104,7 +115,7 @@ namespace ProGo
         private void ShowStatus()
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
-            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy);
+            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, smartRouting);
             mainWindow.FormClosed += delegate { mainWindow = null; };
             mainWindow.Show(); UpdateTooltip();
         }
@@ -126,6 +137,37 @@ namespace ProGo
                 {
                     homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
                     automation.Update(before, settings.Current);
+                    // Manual app rules are local rule-sets: no TUN restart or
+                    // interruption of running games for ordinary edits.
+                    bool transportChanged = before.SocksPort != settings.Current.SocksPort ||
+                        before.SocksHost != settings.Current.SocksHost ||
+                        before.SshProfile != settings.Current.SshProfile;
+                    bool modeChanged = before.SmartRoutingEnabled != settings.Current.SmartRoutingEnabled;
+                    if (transportChanged || modeChanged)
+                    {
+                        StopSmartMonitor();
+                        smartRouting.Stop();
+                    }
+                    if (settings.Current.SmartRoutingEnabled)
+                    {
+                        DisableCli();
+                        if (SystemProxyService.IsOwned)
+                        {
+                            string restoreMessage;
+                            if (!SystemProxyService.Restore(out restoreMessage))
+                                SafeLog.Error("Legacy Windows proxy restore failed.", new InvalidOperationException(restoreMessage));
+                        }
+                        try { SmartRoutingEngine.PrepareConfig(settings.Current); }
+                        catch (Exception ex) { SafeLog.Error("Routing configuration preparation failed.", ex); }
+                        if (smartRouting.IsActive && before.HttpProxyPort != settings.Current.HttpProxyPort)
+                        {
+                            StopSmartMonitor();
+                            StartSmartMonitor();
+                        }
+                    }
+                    smartFailures = 0;
+                    smartSuppressed = false;
+                    nextSmartAttempt = DateTime.MinValue;
                     if (!before.AutoStartSocks && settings.Current.AutoStartSocks) proxy.StartTunnel(false);
                     if (before.SocksPort != settings.Current.SocksPort || before.SocksHost != settings.Current.SocksHost || before.SshProfile != settings.Current.SshProfile)
                     {
@@ -146,6 +188,43 @@ namespace ProGo
                     if (automation.Take(feature, ready))
                         try { EnableFeature(feature); }
                         catch (Exception ex) { SafeLog.Error("Automatic proxy setup failed.", ex); tray.ShowBalloonTip(5000, "ProGo", ex.Message, ToolTipIcon.Warning); }
+                if (!smartRouting.IsActive && smartMonitor != null) StopSmartMonitor();
+                if (settings.Current.SmartRoutingEnabled && !smartSuppressed && ready
+                    && !smartRouting.IsActive && DateTime.UtcNow >= nextSmartAttempt)
+                {
+                    string routingMessage = null;
+                    bool started = false;
+                    try { EnsureBridge(); started = smartRouting.Start(out routingMessage); }
+                    catch (Exception ex) { routingMessage = ex.Message; SafeLog.Error("Smart routing startup exception.", ex); }
+                    if (started)
+                    {
+                        StartSmartMonitor();
+                        smartFailures = 0;
+                        nextSmartAttempt = DateTime.MinValue;
+                        UpdateTooltip();
+                    }
+                    else
+                    {
+                        if (String.IsNullOrWhiteSpace(routingMessage)) routingMessage = "Маршрутизатор не запустился.";
+                        if (routingMessage.StartsWith("Ожидание", StringComparison.Ordinal))
+                        {
+                            nextSmartAttempt = DateTime.UtcNow.AddSeconds(6);
+                        }
+                        else
+                        {
+                        smartFailures++;
+                        SafeLog.Error("Automatic routing start failed.", new InvalidOperationException(routingMessage));
+                        if (routingMessage.Contains("администратора") || routingMessage.Contains("sing-box.exe")
+                            || smartFailures >= 4)
+                        {
+                            smartSuppressed = true;
+                            tray.ShowBalloonTip(7000, "Умная маршрутизация", routingMessage, ToolTipIcon.Warning);
+                        }
+                        else
+                            nextSmartAttempt = DateTime.UtcNow.AddSeconds(5 * (1 << (smartFailures - 1)));
+                        }
+                    }
+                }
             };
             automationTimer.Start();
         }
@@ -158,9 +237,26 @@ namespace ProGo
                     case "connect": if (proxy.IsListening()) proxy.RestartTunnel(); else proxy.StartTunnel(true); break;
                     case "restart": proxy.RestartTunnel(); break;
                     case "stop":
+                        smartSuppressed = true;
+                        StopSmartMonitor();
+                        smartRouting.Stop();
                         foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
                         DisconnectApps(); proxy.StopTunnel(); break;
                     case "settings": ShowSettings(); break;
+                    case "smart-on":
+                        RequireRoute();
+                        EnsureBridge();
+                        string routingError;
+                        if (!smartRouting.Start(out routingError)) throw new InvalidOperationException(routingError);
+                        StartSmartMonitor();
+                        smartFailures = 0;
+                        smartSuppressed = false;
+                        break;
+                    case "smart-off":
+                        smartSuppressed = true;
+                        StopSmartMonitor();
+                        smartRouting.Stop();
+                        break;
                     case "vault": ShowVault(); break;
                     case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(); break;
                     case "diagnostics": using (var form = new StatusForm(settings, proxy)) form.ShowDialog(); break;
@@ -201,6 +297,13 @@ namespace ProGo
         }
         private void EnableFeature(ProxyFeature feature)
         {
+            if (settings.Current.SmartRoutingEnabled || smartRouting.IsActive)
+            {
+                if (feature == ProxyFeature.Windows)
+                    throw new InvalidOperationException("Системный HTTP-прокси Windows несовместим с TUN. Используйте вкладку «Приложения».");
+                if (feature == ProxyFeature.Terminal || feature == ProxyFeature.Codex)
+                    throw new InvalidOperationException("Глобальные HTTP_PROXY/HTTPS_PROXY для терминалов отключены в TUN-режиме. Для Codex выберите маршрут «VPS» во вкладке «Приложения».");
+            }
             EnsureBridge();
             if (feature == ProxyFeature.Terminal) CliProxyEnvironmentService.ApplyUserEnvironment(cliProxy.Port);
             else if (feature == ProxyFeature.Codex) CodexProxyService.EnableOrdinaryLaunch(cliProxy.Port);
@@ -217,8 +320,31 @@ namespace ProGo
         {
             tray.ShowBalloonTip(6000, "CLI-прокси включён", "Codex можно запускать обычным способом. Полностью перезапустите уже открытый терминал или приложение с Codex. Отдельный ярлык не нужен.", ToolTipIcon.Info);
         }
+        private void StartSmartMonitor()
+        {
+            if (smartMonitor != null) return;
+            try
+            {
+                var monitor = new SmartRouteMonitor(cliProxy.ProxyUrl);
+                monitor.Start();
+                smartMonitor = monitor;
+            }
+            catch (Exception ex)
+            {
+                SafeLog.Error("Auto route diagnostics could not start; fixed routes still active.", ex);
+                tray.ShowBalloonTip(6000, "Умная маршрутизация", "Автоматическая проверка доменов недоступна. Ручные правила продолжают работать.", ToolTipIcon.Warning);
+            }
+        }
+        private void StopSmartMonitor()
+        {
+            var monitor = smartMonitor;
+            smartMonitor = null;
+            if (monitor != null) monitor.Dispose();
+        }
         private void DisconnectApps()
         {
+            StopSmartMonitor();
+            smartRouting.Stop();
             try { CliProxyEnvironmentService.ClearUserEnvironmentIfOwned(); }
             catch (Exception ex) { SafeLog.Error("Environment restore failed.", ex); }
             if (SystemProxyService.IsOwned) { string message; SystemProxyService.Restore(out message); }
@@ -238,6 +364,7 @@ namespace ProGo
 
         private void ExitProGo()
         {
+            smartSuppressed = true;
             homeVpn.Stop();
             DisconnectApps();
             tray.Visible = false;

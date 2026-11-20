@@ -131,6 +131,8 @@ Copy-IfExists "vault.enc.json"
 Copy-IfExists "settings.json"
 Copy-IfExists "progo.log"
 Copy-DirectoryIfExists "scripts"
+Copy-DirectoryIfExists "tools"
+Copy-DirectoryIfExists "docs"
 
 Start-ProGo
 
