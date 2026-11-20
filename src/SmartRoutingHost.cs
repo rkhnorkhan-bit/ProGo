@@ -96,6 +96,17 @@ namespace ProGo
         {
             get { return Path.Combine(UserRoot, "smart-routing", "active.json"); }
         }
+        private static void ReportStatus(string state)
+        {
+            try
+            {
+                var path = Path.Combine(UserRoot, "smart-routing", "guard-status.txt");
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllText(path, state + "|" +
+                    DateTime.UtcNow.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            catch (Exception) { }
+        }
         private static string EnginePath
         {
             get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sing-box.exe"); }
@@ -214,16 +225,21 @@ namespace ProGo
             if (!Enabled(settings)) return 0;
             if (!VerifyEngine()) { Log("Refused to start: official engine hash mismatch."); return 12; }
 
-            // TUN must not start before the SSH SOCKS listener is ready.
-            var deadline = DateTime.UtcNow.AddSeconds(100);
-            while (DateTime.UtcNow < deadline)
+            // Wait for SSH as long as Smart Routing is enabled; a temporary
+            // outage must not exhaust Task Scheduler retries.
+            while (true)
             {
                 try { settings = ReadSettings(); } catch (Exception) { return 13; }
-                if (!Enabled(settings)) return 0;
+                if (!Enabled(settings))
+                {
+                    ReportStatus("STOPPED");
+                    return 0;
+                }
                 if (CheckSocks(settings)) break;
+                ReportStatus("WAITING");
                 Thread.Sleep(1800);
             }
-            if (!CheckSocks(settings)) { Log("SOCKS not ready; no TUN started."); return 14; }
+            ReportStatus("STARTING");
             if (!SmartRoutingPolicyValidator.Validate(ConfigPath))
             {
                 Log("Routing config rejected by privileged allowlist.");
@@ -263,6 +279,7 @@ namespace ProGo
                     child.BeginErrorReadLine();
                     while (!child.WaitForExit(1750))
                     {
+                        ReportStatus("RUNNING");
                         try { settings = ReadSettings(); }
                         catch (Exception) { break; }
                         if (!Enabled(settings) ||
@@ -274,6 +291,7 @@ namespace ProGo
                         try { child.Kill(); } catch (Exception) { }
                         child.WaitForExit(4000);
                     }
+                    ReportStatus("STOPPED");
                     Log("TUN engine stopped, exit=" + child.ExitCode);
                     return child.ExitCode == 0 ? 0 : 18;
                 }
