@@ -35,6 +35,11 @@ namespace ProGo
                     RunSelfCheck();
                     return;
                 }
+                if (HasArg(args, "--dump-routing-fixture"))
+                {
+                    DumpRoutingFixture();
+                    return;
+                }
 
                 SafeLog.Info("ProGo started.");
 
@@ -76,6 +81,22 @@ namespace ProGo
 
                 ShowFatal(ex);
             }
+        }
+
+        private static void DumpRoutingFixture()
+        {
+            // Used only by the Windows CI adapter. Nothing is installed or started.
+            var folder = Path.Combine(Path.GetTempPath(), "ProGo-Routing-Fixture");
+            Directory.CreateDirectory(folder);
+            var rulePath = Path.Combine(folder, "auto-proxy.json");
+            File.WriteAllText(rulePath, SmartDomainPolicy.GenerateRuleSet(new[] { "chatgpt.com" }));
+            var settings = AppSettings.Defaults();
+            settings.SocksHost = "127.0.0.1";
+            settings.SocksPort = 1080;
+            settings.ApplicationRoutes.Add(new ApplicationRouteRule { ExecutablePath = @"C:\Apps\ProxyApp.exe", Mode = "proxy" });
+            settings.ApplicationRoutes.Add(new ApplicationRouteRule { ExecutablePath = @"C:\Apps\DirectApp.exe", Mode = "direct" });
+            File.WriteAllText(Path.Combine(folder, "active.json"),
+                ApplicationRouting.GenerateSingBoxConfig(settings, rulePath));
         }
 
         private static void RunSelfCheck()
