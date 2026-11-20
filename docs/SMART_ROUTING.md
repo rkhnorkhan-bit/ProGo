@@ -1,100 +1,104 @@
-# Smart Routing (experimental branch, Windows 11)
+# ProGo Smart Routing — кандидат для локальной приёмки
 
-This feature is **opt-in** and does not change the existing SSH/SOCKS and Windows
-proxy behavior unless enabled. It is **not** included in a published ProGo release.
+**Статус:** изолированная ветка. Не заменяет установленный ProGo до
+проверки TUN, сертификатов, WoW Forever и Hyper-V на HOMESTATION.
 
-## User experience
+## Маршруты приложений
 
-In **Настройки → Приложения**, ProGo discovers running programs and installed
-programs that expose an executable in their uninstall registry entry.
-**Выбрать программу…** opens a standard Windows `.exe` file picker. Rules are
-matched by the *full executable path*, not just the filename.
+В Настройки → Приложения можно найти установленные или запущенные .exe,
+добавить портативную программу кнопкой «Выбрать программу…», выбрать
+«Авто», «VPS» или «Прямо». Правила хранятся в settings.json по полному
+пути исполняемого файла. Системные службы и компоненты ProGo нельзя
+принудительно направлять через VPS.
 
-Each application supports:
+Приоритет правил: private/LAN и ProGo → DIRECT; ручное правило .exe →
+DIRECT или VPS; сертификаты Let's Encrypt и Blizzard → DIRECT;
+подтверждённые автоматические домены → VPS; остальное → DIRECT.
+Ручные правила выше автоматических. SSH/SOCKS поддерживает TCP.
+Для приложения, принудительно направленного через VPS, UDP запрещён.
 
-- **Авто**: safe default **DIRECT** for now; adaptive diagnosis and learning
-  are **not implemented**. In the next phase this may select a route dynamically.
-- **VPS**: TCP through the ProGo SSH SOCKS5 tunnel; UDP for this process is
-  explicitly rejected when TUN is running, avoiding silent direct UDP fallback.
-- **Прямо**: direct connection even when the TUN engine is active.
+Три файловых rule-set sing-box:
+- manual-direct.json — ручные исключения DIRECT;
+- manual-proxy.json — ручные приложения VPS;
+- auto-proxy.json — автоматически выбранные домены.
 
-Rules are saved in the existing `settings.json` as `ApplicationRoutes`.
-Unknown and duplicate entries are normalized without rewriting secrets.
-Windows system executables, ProGo itself, and sing-box are not allowed as
-forced proxy processes.
+Файлы обновляются транзакционно, sing-box 1.14.4 подхватывает изменения
+без перезапуска TUN. Уже открытые TCP соединения не переносятся.
 
-## Technical architecture
+## Автоматический выбор
 
-The TUN engine is **sing-box 1.14+**, distributed separately. No binary is
-downloaded or auto-executed by ProGo. Obtain `sing-box.exe` from the official
-project, verify its provenance, and select it on the Applications tab. The
-default manual install location is:
+В данной версии поддерживаются **три проверяемые группы**: OpenAI,
+GitHub, Claude. Неизвестные сайты остаются DIRECT.
+ProGo не анализирует содержимое трафика и не посылает его на сервер.
 
-`%LOCALAPPDATA%\ProGo\tools\sing-box.exe`
+Для переключения на VPS нужны две последовательные неудачи прямого
+HTTPS и два успешных запроса через прокси. Для возврата на прямой
+маршрут нужны три успешных прямых проверки. HTTP 401/403/405/429
+считаются доказательством доступности TLS, а не блокировки.
+Если оба маршрута недоступны, автоматическое решение не меняется.
+Проверки: спустя 1 с и 15 с после запуска, далее каждые 5 минут;
+тайм-аут 6 секунд. Случайную сетевую ошибку не трактуем как блокировку.
 
-Enabling **SmartRoutingEnabled** makes ProGo try to start the engine once its
-SSH tunnel is ready. The engine is checked with `sing-box check -c` before
-startup. Only the child process created by this ProGo instance is stopped.
-A limited retry mechanism handles transient engine errors; a bad binary or
-missing privileges is reported without an endless restart loop.
+Универсального безошибочного определения блокировок для каждого сайта
+нет. Неклассифицированные подключения идут DIRECT.
 
-**TUN requires administrator rights**. The current version requires ProGo to
-be started as administrator to start the routing engine. A permanent
-least-privilege Windows service and an installer with one-time UAC consent are
-future work.
+## Минимальные привилегии и автозапуск
 
-The new TUN mode is incompatible with the old automatic global Windows HTTP
-proxy. Turn off `AutoSystemProxy` in Automation, and restore the manually
-applied Windows proxy once before enabling TUN. The engine will restore only
-a Windows proxy value already known to belong to ProGo; it does not alter
-third-party proxy settings.
+ProGo GUI запускается обычно, без повышения прав. В TUN режиме
+привилегирован только отдельный sing-box 1.14.4, который запускается
+через задачу Планировщика Windows после входа пользователя.
 
-Routing configuration is generated at
-`%LOCALAPPDATA%\ProGo\smart-routing\active.json` and includes:
+При локальной приёмке, после установки новой тестовой версии в
+%LOCALAPPDATA%\ProGo и сохранения настроек Smart Routing, выполнить
+от имени администратора (той же учётной записи) скрипт:
 
-- TCP SOCKS5 outbound at the existing local SSH `SocksHost:SocksPort`
-- direct outbound for unknown connections and private/LAN IPs
-- explicit process-path rules for VPS/direct
-- DNS hijacking handled by local DNS and IPv4/IPv6 TUN addresses
-- `auto_detect_interface` to reduce routing loops
+    scripts/Install-SmartRoutingEngine.ps1
 
-## Safety and limitations
+Скрипт скачивает официальный архив sing-box с GitHub по закреплённому
+SHA-256, проверяет также SHA-256 бинарника и копирует его в защищённую
+папку Program Files. Задача ProGoSmartRouting запускает только этот
+исполняемый файл, а не весь ProGo с привилегиями администратора.
+Обычный ProGo стартует при входе через HKCU Run. TUN запускается
+с задержкой 45 секунд; SSH/SOCKS поднимает сам ProGo.
 
-- **This is not a privacy kill switch.** If the TUN process exits, the OS may
-  resume direct networking. Never rely on `VPS` mode alone for anonymity or
-  confidentiality of sensitive traffic; full fail-closed WFP policy is future
-  work. While active, unsupported UDP for VPS-selected programs is rejected.
-- DNS resolution still uses the local resolver. A proxied app's DNS queries
-  may disclose domains outside the VPS. Remote DNS routing is future work.
-- Per-process attribution is dependent on the operating system. Connections
-  from child processes, Windows services or webview/browser subprocesses
-  may need additional explicit rules.
-- TUN may interfere with Hyper-V, WSL, firewalls and other VPNs; smoke-test
-  these on an isolated Windows VM before deployment.
-- There is **no real automatic fallback learning yet**. The Autо UI option is
-  intentionally DIRECT until an audited route classifier exists.
-- Editing rules requires Save; updating a running configuration restarts only
-  ProGo's own TUN process, which can interrupt active connections.
-- ProGo never installs kernel drivers, certificate roots, or firewall
-  exceptions automatically. Back up `settings.json` before experiments.
+Для отмены задачи:
 
-## Acceptance steps
+    scripts/Install-SmartRoutingEngine.ps1 -Remove
 
-1. On Windows CI, build ProGo with `scripts/Test-ProGo.ps1`; check that
-   `ProGo.exe --self-check` passes and the routing JSON is parseable.
-2. Install a verified supported sing-box Windows binary **in a disposable
-   VM**, run `sing-box check -c active.json` and confirm no schema warnings.
-3. Verify Battle.net / Let's Encrypt CRL by direct TLS and Windows CAPI2:
-   no permanent global HTTP proxy, no `0x80092013`.
-4. Verify a selected TCP test program appears at the VPS exit IP; unselected
-   programs and LAN/Hyper-V remain direct.
-5. Confirm that UDP from the selected VPS program is rejected (no direct
-   UDP leak) while TUN is active.
-6. Stop and crash-test the engine; document that direct fallback currently
-   occurs. Do not release for privacy-critical traffic before a kill switch.
-7. Reboot and confirm opt-in auto-start (requires administrator context);
-   ensure no unrelated services or network settings are modified.
-8. Verify restore of the previous installer/version and settings backup.
+Удаляется только задача с точно проверенными путём и аргументами.
+Существующие SSH-профили, VPS и сертификаты не меняются. Sing-box
+распространяется отдельно по GPLv3, не включается в дистрибутив ProGo.
 
-Do not publish as a production release until Windows TUN, firewall, DNS
-and Hyper-V acceptance tests are passed.
+## Ограничения, которые нельзя скрывать
+
+- Нет системного WFP kill switch. После аварии sing-box TUN может
+  исчезнуть и некоторые приложения подключатся напрямую. Продукт
+  пока нельзя рекламировать как гарантированную анонимизацию.
+- DNS использует системный резолвер; для проксируемых программ
+  возможны DNS-утечки. В этой версии приоритет — доступность
+  сервисов. Раздельный защищённый DNS — отдельный этап.
+- Ряд QUIC/ECH, дочерних процессов и виртуальных сетей не всегда
+  даёт процессный путь/домен для точного сопоставления.
+- Игра по умолчанию DIRECT; ручной режим VPS с запретом UDP может
+  нарушить работу игр или звонков.
+- Менять SocksPort/SocksHost можно только с перезапуском TUN,
+  обычное изменение правил приложений — без перезапуска.
+- До локальной приёмки совместимость с Hyper-V, WSL, другими VPN
+  и переходом Windows в сон не подтверждена.
+- ProGo не отключает проверку TLS и не ставит корневые сертификаты.
+
+## Проверки до выпуска
+
+GitHub CI: Windows .NET Framework сборка, регрессии SSH/HTTP bridge,
+WinForms, VPN; self-check нормализации правил; проверка реальным
+sing-box check на его официальном SHA-256 подтверждённом архиве.
+
+Локальная приёмка после CI: резервная копия установленного ProGo,
+установка тестовой сборки, проверка UAC и задачи, прямой TLS
+Battle.net/CAPI2 без ослабления проверки сертификатов, вход в WoW,
+правила DIRECT/VPS по EXE, блокировка UDP, автоопределение для
+известных доменов, сон/пробуждение, авария движка, Hyper-V/WSL,
+перезагрузка и полный откат.
+
+**Не сливать и не публиковать как production-релиз до локальных
+сетевых тестов и подтверждения владельца.**
