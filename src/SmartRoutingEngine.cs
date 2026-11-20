@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
@@ -15,6 +16,10 @@ namespace ProGo
         private readonly ProxyService proxy;
         private Process active;
         private readonly object gate = new object();
+        private DateTime lastTaskCheck = DateTime.MinValue;
+        private bool taskRunning;
+        private bool taskOwned;
+        private const string PinnedEngineSha256 = "8f30682ee198855440d2a7fe070d5d3653793b2d01bb8c85eea88f93bbe7c8b9";
 
         public SmartRoutingEngine(SettingsService settingsService, ProxyService proxyService)
         {
@@ -28,15 +33,28 @@ namespace ProGo
             {
                 lock (gate)
                 {
-                    try { return active != null && !active.HasExited; }
-                    catch (InvalidOperationException) { return false; }
+                    try { if (active != null && !active.HasExited) return true; }
+                    catch (InvalidOperationException) { }
+                    if (DateTime.UtcNow - lastTaskCheck < TimeSpan.FromSeconds(8)) return taskRunning;
+                }
+                var state = SmartRoutingTask.State();
+                lock (gate)
+                {
+                    taskRunning = SmartRoutingTask.IsRunningState(state);
+                    taskOwned = SmartRoutingTask.IsManagedState(state);
+                    lastTaskCheck = DateTime.UtcNow;
+                    return taskRunning;
                 }
             }
         }
 
         public static string DefaultEnginePath
         {
-            get { return Path.Combine(AppPaths.Root, "tools", "sing-box.exe"); }
+            get
+            {
+                return File.Exists(SmartRoutingTask.ProtectedEnginePath) ? SmartRoutingTask.ProtectedEnginePath :
+                    Path.Combine(AppPaths.Root, "tools", "sing-box.exe");
+            }
         }
 
         public bool Start(out string message)
@@ -55,17 +73,27 @@ namespace ProGo
                 return false;
             }
 
-            using (var identity = WindowsIdentity.GetCurrent())
+            var taskState = SmartRoutingTask.State();
+            if (String.Equals(taskState, "INVALID", StringComparison.OrdinalIgnoreCase))
             {
-                if (!new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator))
+                message = "Найдена сторонняя задача ProGoSmartRouting. Она не будет запущена или остановлена ProGo.";
+                return false;
+            }
+            bool managedTask = SmartRoutingTask.IsManagedState(taskState);
+            if (!managedTask)
+            {
+                using (var identity = WindowsIdentity.GetCurrent())
                 {
-                    message = "TUN требует прав администратора. Запустите ProGo от имени администратора; настройки и правила уже сохранены.";
-                    return false;
+                    if (!new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator))
+                    {
+                        message = "Для автоматического TUN один раз установите защищённый компонент ProGoRoutingEngine из официального пакета. Не запускайте весь интерфейс ProGo с повышенными правами.";
+                        return false;
+                    }
                 }
             }
 
-            var enginePath = String.IsNullOrWhiteSpace(options.SmartRoutingEnginePath)
-                ? DefaultEnginePath : options.SmartRoutingEnginePath.Trim();
+            var enginePath = managedTask ? SmartRoutingTask.ProtectedEnginePath :
+                (String.IsNullOrWhiteSpace(options.SmartRoutingEnginePath) ? DefaultEnginePath : options.SmartRoutingEnginePath.Trim());
             if (!Path.IsPathRooted(enginePath) || !File.Exists(enginePath)
                 || !String.Equals(Path.GetFileName(enginePath), "sing-box.exe", StringComparison.OrdinalIgnoreCase))
             {
@@ -73,9 +101,14 @@ namespace ProGo
                 return false;
             }
 
-            var hasProxyRules = ApplicationRouting.Normalize(options.ApplicationRoutes)
-                .Exists(r => r.Mode == ApplicationRouting.Proxy);
-            if (hasProxyRules && !proxy.IsListening())
+            string hashError;
+            if (!VerifyPinnedEngine(enginePath, out hashError))
+            {
+                message = hashError;
+                return false;
+            }
+
+            if (!proxy.IsListening())
             {
                 message = "SSH/SOCKS-соединение не готово. Запустите подключение ProGo перед включением TUN.";
                 return false;
@@ -120,6 +153,34 @@ namespace ProGo
                 }
                 if (File.Exists(configFile)) File.Replace(pendingFile, configFile, null);
                 else File.Move(pendingFile, configFile);
+
+                if (managedTask)
+                {
+                    if (!SmartRoutingTask.IsRunningState(taskState))
+                    {
+                        string taskMessage;
+                        if (!SmartRoutingTask.Run(out taskMessage))
+                        {
+                            message = "Планировщик отказал в запуске TUN: " + taskMessage;
+                            return false;
+                        }
+                        Thread.Sleep(1300);
+                    }
+                    var latestState = SmartRoutingTask.State();
+                    lock (gate)
+                    {
+                        taskOwned = true;
+                        taskRunning = SmartRoutingTask.IsRunningState(latestState);
+                        lastTaskCheck = DateTime.UtcNow;
+                    }
+                    if (!SmartRoutingTask.IsRunningState(latestState))
+                    {
+                        message = "Планировщик принял команду, но TUN не запустился: " + latestState;
+                        return false;
+                    }
+                    SafeLog.Info("Smart routing started via protected scheduled task.");
+                    return true;
+                }
 
                 var start = new ProcessStartInfo(enginePath)
                 {
@@ -171,6 +232,23 @@ namespace ProGo
             }
         }
 
+        private static bool VerifyPinnedEngine(string path, out string message)
+        {
+            message = null;
+            try
+            {
+                using (var sha = SHA256.Create())
+                using (var file = File.OpenRead(path))
+                {
+                    var digest = BitConverter.ToString(sha.ComputeHash(file)).Replace("-", "").ToLowerInvariant();
+                    if (String.Equals(digest, PinnedEngineSha256, StringComparison.Ordinal)) return true;
+                }
+                message = "Неверная контрольная сумма sing-box.exe. Нужен официальный sing-box 1.14.4 (amd64). Исполняемый файл не запущен.";
+            }
+            catch (Exception ex) { message = "Не удалось проверить SHA-256 sing-box.exe: " + ex.Message; }
+            return false;
+        }
+
         // CLI dry-run is mandatory; untrusted binaries are never downloaded
         // and never invoked by a system shell.
         private static bool CheckConfig(string enginePath, string configPath, out string message)
@@ -204,6 +282,18 @@ namespace ProGo
 
         public void Stop()
         {
+            var state = SmartRoutingTask.State();
+            if (SmartRoutingTask.IsRunningState(state))
+            {
+                string taskMessage;
+                if (!SmartRoutingTask.Stop(out taskMessage))
+                    SafeLog.Error("Could not stop owned routing task.", new InvalidOperationException(taskMessage));
+            }
+            lock (gate)
+            {
+                taskRunning = false;
+                lastTaskCheck = DateTime.MinValue;
+            }
             Process process;
             lock (gate) { process = active; active = null; }
             if (process == null) return;
