@@ -32,10 +32,12 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "ProGo fixture export failed" }
     $fixture = Join-Path $env:TEMP "ProGo-Routing-Fixture\active.json"
     $rules = Join-Path $env:TEMP "ProGo-Routing-Fixture\auto-proxy.json"
-    if (-not (Test-Path $fixture) -or -not (Test-Path $rules)) { throw "Missing routing fixture" }
+    $manualDirect = Join-Path $env:TEMP "ProGo-Routing-Fixture\manual-direct.json"
+    $manualProxy = Join-Path $env:TEMP "ProGo-Routing-Fixture\manual-proxy.json"
+    if (-not (Test-Path $fixture) -or -not (Test-Path $rules) -or -not (Test-Path $manualDirect) -or -not (Test-Path $manualProxy)) { throw "Missing routing fixture" }
     $json = Get-Content -LiteralPath $fixture -Raw -Encoding UTF8 | ConvertFrom-Json
     if (-not $json.route.auto_detect_interface) { throw "TUN loop avoidance not enabled" }
-    if ($json.route.rule_set[0].tag -ne "auto-proxy") { throw "Hot-reload rule set is missing" }
+    if (@($json.route.rule_set).Count -ne 3) { throw "Expected three hot-reload rule sets" }
     $ruleJson = Get-Content -LiteralPath $rules -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($ruleJson.version -ne 1) { throw "Unexpected rule-set format" }
 
