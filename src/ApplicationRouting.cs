@@ -153,8 +153,9 @@ namespace ProGo
 
         // sing-box 1.14.4: strict rule order, manual app rules precede auto domains.
         // Local rule-set files hot-reload on change without a TUN restart.
-        internal static string GenerateSingBoxConfig(AppSettings settings)
+        internal static string GenerateSingBoxConfig(AppSettings settings, string ruleSetPath = null)
         {
+            if (String.IsNullOrWhiteSpace(ruleSetPath)) ruleSetPath = SmartDomainPolicy.RuleSetPath;
             if (settings == null) throw new ArgumentNullException("settings");
             var rules = Normalize(settings.ApplicationRoutes);
             var routing = new List<object>();
@@ -210,7 +211,7 @@ namespace ProGo
                 } },
                 { "route", new {
                     auto_detect_interface = true,
-                    rule_set = new object[] { new { type = "local", tag = "auto-proxy", format = "source", path = SmartDomainPolicy.RuleSetPath } },
+                    rule_set = new object[] { new { type = "local", tag = "auto-proxy", format = "source", path = ruleSetPath } },
                     rules = routing,
                     final = Direct
                 } }
