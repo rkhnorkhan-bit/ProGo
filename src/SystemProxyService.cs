@@ -147,7 +147,7 @@ namespace ProGo
         {
             get
             {
-                try { var saved = LoadBackup(); var now = ReadCurrent(); return saved != null && !String.IsNullOrWhiteSpace(saved.AppliedServer) && now.ProxyServer == saved.AppliedServer; }
+                try { var saved = LoadBackup(); var now = ReadCurrent(); return saved != null && now.ProxyEnable != 0 && !String.IsNullOrWhiteSpace(saved.AppliedServer) && String.Equals(now.ProxyServer, saved.AppliedServer, StringComparison.OrdinalIgnoreCase); }
                 catch { return false; }
             }
         }
