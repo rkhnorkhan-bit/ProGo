@@ -115,7 +115,7 @@ namespace ProGo
         private void ShowStatus()
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
-            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy);
+            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, smartRouting);
             mainWindow.FormClosed += delegate { mainWindow = null; };
             mainWindow.Show(); UpdateTooltip();
         }
