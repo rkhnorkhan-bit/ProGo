@@ -26,7 +26,18 @@ try {
     $binaryHash = (Get-FileHash -Path $engine -Algorithm SHA256).Hash.ToLowerInvariant()
     Write-Host "SING_BOX_EXE_SHA256=$binaryHash"
     & $engine version
-    if ($LASTEXITCODE -ne 0) { throw "Cannot run signed-release sing-box executable" }
+    if ($LASTEXITCODE -ne 0) { throw "Cannot run verified sing-box executable" }
+
+    $guard = Join-Path $root "release\tools\ProGoSmartRoutingHost.exe"
+    if (-not (Test-Path $guard)) { throw "Protected routing host missing from release" }
+    $guardResult = Start-Process -FilePath $guard -ArgumentList "--self-check" -Wait -PassThru
+    if ($guardResult.ExitCode -ne 0) { throw "Routing guard self-check failed: $($guardResult.ExitCode)" }
+
+    # Exercise the Windows scheduler object model without registration or
+    # elevation; an actual task is created only during local acceptance.
+    $trigger = New-ScheduledTaskTrigger -AtLogOn -User ([Security.Principal.WindowsIdentity]::GetCurrent().Name)
+    $trigger.Delay = "PT45S"
+    if ($trigger.Delay -ne "PT45S") { throw "Unexpected scheduler trigger delay" }
 
     $fixtureProcess = Start-Process -FilePath $exeProGo -ArgumentList "--dump-routing-fixture" -Wait -PassThru
     if ($fixtureProcess.ExitCode -ne 0) { throw "ProGo fixture export failed with exit code $($fixtureProcess.ExitCode)" }
