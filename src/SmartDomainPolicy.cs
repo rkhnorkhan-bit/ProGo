@@ -141,6 +141,7 @@ namespace ProGo
         private readonly ManualResetEvent stop = new ManualResetEvent(false);
         private Thread thread;
         private bool disposed;
+        private bool stopClosed;
         private readonly object gate = new object();
 
         public SmartRouteMonitor(string proxyBridgeUrl)
@@ -164,6 +165,8 @@ namespace ProGo
 
         private void Run()
         {
+            try
+            {
             // Two observations 15 seconds apart at startup, then every 5 minutes.
             int pass = 0;
             while (!stop.WaitOne(pass == 0 ? 1000 : pass == 1 ? 15000 : 300000))
@@ -197,6 +200,8 @@ namespace ProGo
                 catch (Exception ex) { SafeLog.Error("SmartRoute monitor cycle failed.", ex); }
                 pass++;
             }
+            }
+            finally { CloseStop(); }
         }
 
         private bool Probe(string url, bool viaProxy)
@@ -233,12 +238,21 @@ namespace ProGo
             {
                 if (disposed) return;
                 disposed = true;
-                stop.Set();
+                if (!stopClosed) stop.Set();
             }
             var worker = thread;
-            if (worker != null && worker != Thread.CurrentThread) worker.Join(200);
-            // Background requests can still be finishing. Run() owns this event's
-            // final disposal; disposing it here would crash the worker on WaitOne.
+            if (worker == null || (worker != Thread.CurrentThread && worker.Join(200)))
+                CloseStop();
+        }
+
+        private void CloseStop()
+        {
+            lock (gate)
+            {
+                if (stopClosed) return;
+                stopClosed = true;
+                stop.Dispose();
+            }
         }
     }
 }
