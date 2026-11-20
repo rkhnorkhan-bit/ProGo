@@ -47,7 +47,7 @@ namespace ProGo
             heading.Dock = DockStyle.Fill;
             layout.Controls.Add(heading, 0, 0);
 
-            var description = UiTheme.Label("«Авто» пока означает прямой доступ. «VPS» направляет TCP через SSH/SOCKS; UDP блокируется. Изменения вступают в силу после сохранения и запуска TUN.", UiTheme.Body, UiTheme.Muted);
+            var description = UiTheme.Label("Авто: проверяемые сервисы (OpenAI, GitHub, Claude) переключаются после повторных проверок. Остальные — напрямую. VPS: TCP через SSH; UDP запрещён. Ручные правила важнее авто.", UiTheme.Body, UiTheme.Muted);
             description.Dock = DockStyle.Fill;
             layout.Controls.Add(description, 0, 1);
 
@@ -116,10 +116,10 @@ namespace ProGo
             layout.Controls.Add(enginePanel, 0, 5);
 
             var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
-            enabled.Text = "Автоматически запускать TUN после подключения к серверу";
+            enabled.Text = "Умная маршрутизация при запуске ProGo (первоначальная настройка требует UAC)";
             enabled.AutoSize = true;
             footer.Controls.Add(enabled);
-            hint.Text = "Нужен официальный sing-box.exe и права администратора. Старый глобальный Windows-прокси должен быть выключен.";
+            hint.Text = "Для запуска без прав администратора установите защищённую задачу из scripts/Install-SmartRoutingEngine.ps1. Глобальный HTTP-прокси должен быть выключен.";
             hint.ForeColor = UiTheme.Muted;
             hint.AutoSize = true;
             footer.Controls.Add(hint);
