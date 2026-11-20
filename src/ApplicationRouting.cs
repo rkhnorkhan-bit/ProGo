@@ -151,26 +151,43 @@ namespace ProGo
             };
         }
 
-        // sing-box 1.14+ syntax. No automatic learning or silent proxy fallback is implied.
+        // sing-box 1.14.4: strict rule order, manual app rules precede auto domains.
+        // Local rule-set files hot-reload on change without a TUN restart.
         internal static string GenerateSingBoxConfig(AppSettings settings)
         {
             if (settings == null) throw new ArgumentNullException("settings");
             var rules = Normalize(settings.ApplicationRoutes);
             var routing = new List<object>();
-            routing.Add(new Dictionary<string, object> { { "protocol", "dns" }, { "action", "hijack-dns" } });
-            routing.Add(new Dictionary<string, object> { { "ip_is_private", true }, { "action", "route" }, { "outbound", Direct } });
+            routing.Add(new { action = "sniff" });
+            routing.Add(new { protocol = "dns", action = "hijack-dns" });
+            routing.Add(new { ip_is_private = true, action = "route", outbound = Direct });
+            // Never route ProGo's own connectivity probes or transport via its TUN.
+            routing.Add(new { process_path = new[] { Application.ExecutablePath },
+                              action = "route", outbound = Direct });
 
             var directApps = rules.Where(x => x.Mode == Direct).Select(x => x.ExecutablePath).ToArray();
             var proxyApps = rules.Where(x => x.Mode == Proxy).Select(x => x.ExecutablePath).ToArray();
             if (directApps.Length != 0)
-                routing.Add(new Dictionary<string, object> { { "process_path", directApps }, { "action", "route" }, { "outbound", Direct } });
+                routing.Add(new { process_path = directApps, action = "route", outbound = Direct });
             if (proxyApps.Length != 0)
             {
-                // The existing SSH -D transport is TCP only. Reject unsupported UDP
-                // for explicitly proxied processes rather than leaking it via DIRECT.
-                routing.Add(new Dictionary<string, object> { { "process_path", proxyApps }, { "network", "udp" }, { "action", "reject" } });
-                routing.Add(new Dictionary<string, object> { { "process_path", proxyApps }, { "network", "tcp" }, { "action", "route" }, { "outbound", Proxy } });
+                // The existing SSH -D supports TCP only. Deny UDP for explicit
+                // proxy applications instead of silently sending it directly.
+                routing.Add(new { process_path = proxyApps, network = "udp", action = "reject" });
+                routing.Add(new { process_path = proxyApps, network = "tcp", action = "route", outbound = Proxy });
             }
+
+            // Never automatically proxy Windows certificate-revocation endpoints
+            // or Blizzard games. Explicit application choices above can override
+            // Blizzard's default, but not the Windows trust-store safety boundary.
+            routing.Add(new { domain_suffix = new[] { "lencr.org" }, action = "route", outbound = Direct });
+            routing.Add(new { domain_suffix = new[] { "battle.net", "blizzard.com" },
+                              action = "route", outbound = Direct });
+
+            // Only known monitored service groups can enter this rule set. A
+            // transient failure or HTTP 4xx is not sufficient evidence.
+            routing.Add(new { rule_set = "auto-proxy", network = "udp", action = "reject" });
+            routing.Add(new { rule_set = "auto-proxy", network = "tcp", action = "route", outbound = Proxy });
 
             var config = new Dictionary<string, object>
             {
@@ -180,8 +197,8 @@ namespace ProGo
                     new {
                         type = "tun", tag = "progo-tun", interface_name = "ProGoTUN",
                         address = new[] { "172.25.248.1/30", "fdfe:dcba:9876::1/126" },
-                        auto_route = true,
-                        strict_route = false
+                        auto_route = true, dns_mode = "hijack",
+                        strict_route = false // Hyper-V/WSL acceptance still required.
                     }
                 } },
                 { "outbounds", new object[] {
@@ -193,6 +210,7 @@ namespace ProGo
                 } },
                 { "route", new {
                     auto_detect_interface = true,
+                    rule_set = new object[] { new { type = "local", tag = "auto-proxy", format = "source", path = SmartDomainPolicy.RuleSetPath } },
                     rules = routing,
                     final = Direct
                 } }
