@@ -57,16 +57,27 @@ namespace ProGo
             }
         }
 
+        internal static void PrepareConfig(AppSettings options)
+        {
+            if (options == null) throw new ArgumentNullException("options");
+            var dir = Path.Combine(AppPaths.Root, "smart-routing");
+            Directory.CreateDirectory(dir);
+            if (!File.Exists(SmartDomainPolicy.RuleSetPath))
+                SmartDomainPolicy.SaveRuleSet(new string[0]);
+            ApplicationRouting.SaveManualRuleSets(options);
+            SmartDomainPolicy.WriteAtomic(Path.Combine(dir, "active.json"), ApplicationRouting.GenerateSingBoxConfig(options));
+        }
+
         public bool Start(out string message)
         {
             message = null;
-            if (IsActive) return true;
             var options = settings.Current;
             if (!options.SmartRoutingEnabled)
             {
                 message = "Включите «Умная маршрутизация» и сохраните настройки.";
                 return false;
             }
+            if (IsActive) return true;
             if (options.AutoSystemProxy)
             {
                 message = "Нельзя одновременно включать системный HTTP-прокси и режим TUN. Отключите автоматическое применение прокси Windows.";
