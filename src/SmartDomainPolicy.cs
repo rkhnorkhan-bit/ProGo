@@ -234,8 +234,8 @@ namespace ProGo
             }
             var worker = thread;
             if (worker != null && worker != Thread.CurrentThread) worker.Join(200);
-            // Do not clear the rule-set until the sing-box engine is stopped.
-            stop.Dispose();
+            // Background requests can still be finishing. Run() owns this event's
+            // final disposal; disposing it here would crash the worker on WaitOne.
         }
     }
 }
