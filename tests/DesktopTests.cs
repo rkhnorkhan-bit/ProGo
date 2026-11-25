@@ -54,6 +54,11 @@ namespace ProGo
                 Check(old.AutoHttpProxyPort && old.HttpProxyPort == 1881, "legacy settings start with automatic port selection");
                 var manualPort = json.Deserialize<AppSettings>("{\"AutoHttpProxyPort\":false,\"HttpProxyPort\":31881}");
                 Check(!manualPort.AutoHttpProxyPort && manualPort.HttpProxyPort == 31881, "explicit manual port survives settings load");
+                Check(SystemProxyService.BuildProxyServer(1881) == "127.0.0.1:1881", "Windows proxy uses a single endpoint for HTTP and HTTPS");
+                Check(SystemProxyService.BuildProxyServer(31881) == "127.0.0.1:31881", "Windows proxy syntax follows port changes");
+                Check(SystemProxyService.DefaultProxyOverride.Contains("[::1]") && !SystemProxyService.DefaultProxyOverride.Contains(";::1;"), "Windows IPv6 loopback bypass is bracketed");
+                SystemProxyService.ValidateProxySyntax(SystemProxyService.BuildProxyServer(1881), SystemProxyService.DefaultProxyOverride);
+                Check(true, "native WinHttpOpen accepts proposed proxy syntax without a network request");
                 ScopedCodex();
                 RestorePreferences();
                 using (var settings = new SettingsService())
@@ -170,7 +175,8 @@ namespace ProGo
                 Check(SystemProxyService.IsOwned && SystemProxyService.IsApplied(AppSettings.Defaults()), "Windows proxy ownership is tracked");
                 using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings", true))
                 {
-                    Check(Convert.ToString(key.GetValue("ProxyServer")) == "http=127.0.0.1:1881;https=127.0.0.1:1881", "Windows uses tested HTTP/CONNECT bridge");
+                    Check(Convert.ToString(key.GetValue("ProxyServer")) == "127.0.0.1:1881", "Windows uses tested HTTP/CONNECT bridge");
+                    Check(Convert.ToString(key.GetValue("ProxyOverride")) == SystemProxyService.DefaultProxyOverride, "Windows uses compatible loopback bypass syntax");
                     key.SetValue("ProxyServer", "other.example.org:8080");
                     Check(!SystemProxyService.IsOwned, "exit does not own another application's Windows proxy");
                 }

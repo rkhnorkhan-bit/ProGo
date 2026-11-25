@@ -31,13 +31,31 @@ namespace ProGo
         private const int WM_SETTINGCHANGE = 0x001A;
         private const int SMTO_ABORTIFHUNG = 0x0002;
         private const string BackupFileName = "system-proxy-backup.json";
-        private const string DefaultProxyOverride = "localhost;127.0.0.1;::1;<local>";
+        internal const string DefaultProxyOverride = "localhost;127.0.0.1;[::1];<local>";
+        internal const string LegacyProxyOverride = "localhost;127.0.0.1;::1;<local>";
+        private const uint WINHTTP_ACCESS_TYPE_NAMED_PROXY = 3;
 
         [DllImport("wininet.dll", SetLastError = true)]
         private static extern bool InternetSetOption(IntPtr hInternet, int dwOption, IntPtr lpBuffer, int dwBufferLength);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr SendMessageTimeout(IntPtr hWnd, int Msg, IntPtr wParam, string lParam, int fuFlags, int uTimeout, out IntPtr lpdwResult);
+
+        [DllImport("winhttp.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
+        private static extern IntPtr WinHttpOpen(string agent, uint accessType, string proxy, string bypass, uint flags);
+
+        [DllImport("winhttp.dll", SetLastError = true)]
+        private static extern bool WinHttpCloseHandle(IntPtr handle);
+
+        // Local parser check only: no network request or changes to WinHTTP policy.
+        internal static void ValidateProxySyntax(string server, string bypass)
+        {
+            IntPtr handle = WinHttpOpen("ProGo compatibility check", WINHTTP_ACCESS_TYPE_NAMED_PROXY, server,
+                String.IsNullOrEmpty(bypass) ? null : bypass, 0);
+            if (handle == IntPtr.Zero)
+                throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "WinHTTP rejected the application proxy settings.");
+            WinHttpCloseHandle(handle);
+        }
 
         public static string BackupPath
         {
@@ -59,9 +77,18 @@ namespace ProGo
                 return false;
             }
 
+            SystemProxyBackup previous = null;
+            byte[] previousBackup = null;
+            bool backupCaptured = false;
+            bool registryTouched = false;
             try
             {
+                var server = BuildProxyServer(settings);
+                ValidateProxySyntax(server, DefaultProxyOverride);
                 AppPaths.EnsureDirectories();
+                previous = ReadCurrent();
+                previousBackup = File.Exists(BackupPath) ? File.ReadAllBytes(BackupPath) : null;
+                backupCaptured = true;
                 SaveBackupIfNeeded();
                 var owned = LoadBackup();
                 owned.AppliedServer = BuildProxyServer(settings);
@@ -71,15 +98,15 @@ namespace ProGo
                 {
                     if (key == null)
                     {
-                        message = "Не удалось открыть настройки Internet Settings текущего пользователя.";
-                        return false;
+                        throw new IOException("Не удалось открыть настройки Internet Settings текущего пользователя.");
                     }
 
-                    key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
-                    key.SetValue("ProxyServer", BuildProxyServer(settings), RegistryValueKind.String);
+                    registryTouched = true;
+                    key.SetValue("ProxyServer", server, RegistryValueKind.String);
                     key.SetValue("ProxyOverride", DefaultProxyOverride, RegistryValueKind.String);
                     key.SetValue("AutoDetect", 0, RegistryValueKind.DWord);
                     DeleteValueSafe(key, "AutoConfigURL");
+                    key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
                 }
 
                 RefreshSystemProxy();
@@ -89,6 +116,16 @@ namespace ProGo
             catch (Exception ex)
             {
                 SafeLog.Error("Current-user Windows proxy enable failed.", ex);
+                try
+                {
+                    if (registryTouched && previous != null) RestoreSnapshot(previous);
+                    if (backupCaptured)
+                    {
+                        if (previousBackup != null) File.WriteAllBytes(BackupPath, previousBackup);
+                        else if (File.Exists(BackupPath)) File.Delete(BackupPath);
+                    }
+                }
+                catch (Exception rollback) { SafeLog.Error("Windows proxy apply rollback failed; backup retained where possible.", rollback); }
                 message = "Не удалось включить системный прокси Windows. Подробности записаны в журнал.";
                 return false;
             }
@@ -239,7 +276,14 @@ namespace ProGo
 
         private static string BuildProxyServer(AppSettings settings)
         {
-            return "http=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort + ";https=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort;
+            return BuildProxyServer(settings.HttpProxyPort);
+        }
+
+        internal static string BuildProxyServer(int port)
+        {
+            if (port < 1 || port > 65535) throw new ArgumentOutOfRangeException("port");
+            // One HTTP CONNECT endpoint serves both schemes; do not publish two redundant entries.
+            return CliProxyBridgeService.Host + ":" + port;
         }
 
         private static void RestoreDword(RegistryKey key, string name, bool hadValue, int value)
