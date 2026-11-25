@@ -30,11 +30,14 @@ namespace ProGo
             if (windowsOwned)
             {
                 // Preserve all registry flags, including a manual Windows proxy disable.
-                windows.AppliedServer = "http=" + CliProxyBridgeService.Host + ":" + port + ";https=" + CliProxyBridgeService.Host + ":" + port;
+                windows.AppliedServer = SystemProxyService.BuildProxyServer(port);
                 var target = new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<SystemProxyBackup>(File.ReadAllText(SystemProxyService.BackupPath));
                 target.AppliedServer = windows.AppliedServer;
                 var current = SystemProxyService.ReadCurrent();
                 current.ProxyServer = windows.AppliedServer; current.HadProxyServer = true;
+                if (current.ProxyOverride == SystemProxyService.LegacyProxyOverride)
+                    current.ProxyOverride = SystemProxyService.DefaultProxyOverride;
+                SystemProxyService.ValidateProxySyntax(current.ProxyServer, current.ProxyOverride);
                 SystemProxyService.RestoreSnapshot(current);
                 File.WriteAllText(SystemProxyService.BackupPath, new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(target));
             }

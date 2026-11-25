@@ -83,7 +83,7 @@ environment of processes that are already running. Windows system proxy is separ
 port. For example, when it is 1881:
 
 ```text
-http=127.0.0.1:1881;https=127.0.0.1:1881
+127.0.0.1:1881
 ```
 
 The previous proxy configuration is stored in `system-proxy-backup.json`.
@@ -93,3 +93,24 @@ are not overwritten on exit. Machine-wide WinHTTP is not modified.
 
 Apps that ignore system settings can connect directly; this feature is not a full
 Windows VPN. The [iPhone wizard](HOME_IKEV2.md) is a separate native IKEv2 route.
+
+### Windows TLS compatibility (candidate fix)
+
+The shared HTTP/CONNECT endpoint is written once for both schemes, and IPv6
+loopback is represented as `[::1]` in the Windows bypass list. ProGo preflights
+this syntax with native `WinHttpOpen` before writing the Windows proxy; this
+checks session creation, not network reachability or certificate revocation.
+Failed application attempts roll back the previous registry values and backup.
+Owned legacy settings are migrated on re-apply or application-port change.
+ProGo does not reset user or machine advanced WinHTTP policy or disable TLS
+revocation checks. A previously configured advanced WinHTTP proxy may still
+require administrator review. Do not overwrite an unrelated proxy or PAC.
+
+Before release, verify on the affected Windows machine: direct HTTPS with full
+certificate checks, HTTPS through the local bridge for a permitted destination,
+CAPI2 event 53 (no WinHttpOpen error 87 during the test), re-apply, port change,
+restart, disconnect and restoration of original proxy settings. For desktop
+messaging clients distinguish login/HTTP/WebSocket failures from voice/UDP:
+this HTTP CONNECT/SSH dynamic forwarding bridge handles TCP, not arbitrary UDP.
+A remote service HTTP 403 is not proof of a local proxy failure; regional
+availability and service-side access decisions are outside the bridge contract.
